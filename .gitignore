@@ -31,4 +31,8 @@
 # Debug files
 *.dSYM/
 
+# Random stuff...
 *timelapse
+bla
+*assets/xcf
+*promo
