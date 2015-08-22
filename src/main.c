@@ -114,6 +114,10 @@ int main(int argc, char *argv[]) {
     rv = gfm_initFPSCounter(game.pCtx, game.pSset8x8, 0/*firstTile*/);
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Initialize the quadtree
+    rv = gfmQuadtree_getNew(&(game.pQt));
+    ASSERT(rv == GFMRV_OK, rv);
+    
     // Loop...
     game.state = state_playstate;
     while (gfm_didGetQuitFlag(game.pCtx) == GFMRV_FALSE) {
@@ -128,6 +132,9 @@ int main(int argc, char *argv[]) {
     rv = GFMRV_OK;
 __ret:
     // Clean all resources
+    gfmGenArr_clean(game.pObjs, gfmObject_free);
+    gfmGenArr_clean(game.pSprs, gfmSprite_free);
+    gfmQuadtree_free(&(game.pQt));
     gfm_free(&(game.pCtx));
     
     return rv;
