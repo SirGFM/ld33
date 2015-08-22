@@ -4,9 +4,40 @@
  * The game's entry point
  */
 #include <ld33/game.h>
+#include <ld33/main.h>
 #include <ld33/playstate.h>
 
 #include <string.h>
+
+/**
+ * Update all key's states (and the quit flag)
+ */
+gfmRV main_getKeyStates(gameCtx *pGame) {
+    gfmRV rv;
+    
+#define GET_KEY_STATE(key) \
+    rv = gfm_getKeyState(&(pGame->state_##key), &(pGame->num_##key), \
+        pGame->pCtx, pGame->handle_##key); \
+    ASSERT(rv == GFMRV_OK, rv)
+    
+    GET_KEY_STATE(down);
+    GET_KEY_STATE(left);
+    GET_KEY_STATE(right);
+    GET_KEY_STATE(up);
+    GET_KEY_STATE(atk);
+    GET_KEY_STATE(quit);
+    
+#undef GET_KEY_STATE
+    
+    if ((pGame->state_quit & gfmInput_justPressed) == gfmInput_justPressed) {
+        rv = gfm_setQuitFlag(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
 
 /**
  * Load all assets; It should run on another thread while the main plays an
@@ -117,7 +148,28 @@ int main(int argc, char *argv[]) {
     rv = gfm_initAudio(game.pCtx, audSettings);
     ASSERT(rv == GFMRV_OK, rv);
     
-    // TODO Bind keys
+    // Bind keys
+#define BIND_NEW_KEY(handle, key) \
+    rv = gfm_addVirtualKey(&(game.handle_##handle), game.pCtx); \
+    ASSERT(rv == GFMRV_OK, rv); \
+    rv = gfm_bindInput(game.pCtx, game.handle_##handle, key); \
+    ASSERT(rv == GFMRV_OK, rv)
+#define BIND_KEY(handle, key) \
+    rv = gfm_bindInput(game.pCtx, game.handle_##handle, key); \
+    ASSERT(rv == GFMRV_OK, rv)
+    
+    BIND_NEW_KEY(down, gfmKey_down);
+    BIND_KEY(down, gfmKey_s);
+    BIND_NEW_KEY(left, gfmKey_left);
+    BIND_KEY(left, gfmKey_a);
+    BIND_NEW_KEY(right, gfmKey_right);
+    BIND_KEY(right, gfmKey_d);
+    BIND_NEW_KEY(up, gfmKey_up);
+    BIND_KEY(up, gfmKey_w);
+    BIND_NEW_KEY(quit, gfmKey_esc);
+    
+#undef BIND_NEW_KEY
+#undef BIND_KEY
     
     // Load assets
     rv = loadAssets(&game);

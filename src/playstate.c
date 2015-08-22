@@ -6,6 +6,7 @@
 #include <GFraMe/gfmGenericArray.h>
 
 #include <ld33/playstate.h>
+#include <ld33/main.h>
 #include <ld33/mob.h>
 
 gfmGenArr_define(mob);
@@ -159,6 +160,9 @@ gfmRV playstate_loop(gameCtx *pGame) {
         
         while (gfm_isUpdating(pGame->pCtx) == GFMRV_TRUE) {
             rv = gfm_fpsCounterUpdateBegin(pGame->pCtx);
+            ASSERT(rv == GFMRV_OK, rv);
+            
+            rv = main_getKeyStates(pGame);
             ASSERT(rv == GFMRV_OK, rv);
             
             rv = playstate_update(pGame);

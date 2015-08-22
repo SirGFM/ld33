@@ -59,6 +59,26 @@ struct stGameCtx {
     stateTypes state;
     /** Whether we should quit from the current state */
     int quitState;
+    /** Input handles */
+    int handle_down;
+    int handle_left;
+    int handle_right;
+    int handle_up;
+    int handle_atk;
+    int handle_quit;
+    /** Input states */
+    gfmInputState state_down;
+    int num_down;
+    gfmInputState state_left;
+    int num_left;
+    gfmInputState state_right;
+    int num_right;
+    gfmInputState state_up;
+    int num_up;
+    gfmInputState state_atk;
+    int num_atk;
+    gfmInputState state_quit;
+    int num_quit;
 };
 typedef struct stGameCtx gameCtx;
 
