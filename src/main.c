@@ -4,6 +4,7 @@
  * The game's entry point
  */
 #include <ld33/game.h>
+#include <ld33/playstate.h>
 
 #include <string.h>
 
@@ -42,7 +43,7 @@ int main(int argc, char *argv[]) {
     gameCtx game;
     gfmAudioQuality audSettings;
     gfmRV rv;
-    int bbufWidth, bbufHeight, dps, isFullscreen, ups;
+    int bbufWidth, bbufHeight, dps, fps, isFullscreen, ups;
     
     // Clean everything before hand
     memset(&game, 0x0, sizeof(gameCtx));
@@ -104,6 +105,11 @@ int main(int argc, char *argv[]) {
     rv = gfm_setStateFrameRate(game.pCtx, ups, dps);
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Set the timer resolution, in frames per seconds
+    fps = 60;
+    rv = gfm_setFPS(game.pCtx, fps);
+    ASSERT(rv == GFMRV_OK, rv);
+    
     // Initialize the FPS counter (only visible in debug mode, though)
     rv = gfm_initFPSCounter(game.pCtx, game.pSset8x8, 0/*firstTile*/);
     ASSERT(rv == GFMRV_OK, rv);
@@ -111,17 +117,12 @@ int main(int argc, char *argv[]) {
     // Loop...
     game.state = state_playstate;
     while (gfm_didGetQuitFlag(game.pCtx) == GFMRV_FALSE) {
-        // This handle will only be here while I don't write the playstate (so
-        // we can quit)
-        rv = gfm_handleEvents(game.pCtx);
-        ASSERT(rv == GFMRV_OK, rv);
-        
+        // Run the current state
         switch (game.state) {
-            case state_playstate: {
-                // TODO Call the playstate loop
-            } break;
-            default: ASSERT(0, GFMRV_INTERNAL_ERROR);
+            case state_playstate: rv = playstate_loop(&game); break;
+            default: rv = GFMRV_INTERNAL_ERROR;
         }
+        ASSERT(rv == GFMRV_OK, rv);
     }
     
     rv = GFMRV_OK;

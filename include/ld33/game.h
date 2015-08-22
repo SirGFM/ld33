@@ -34,6 +34,8 @@ struct stGameCtx {
     void *pState;
     /** Definition of the current state's type */
     stateTypes state;
+    /** Whether we should quit from the current state */
+    int quitState;
 };
 typedef struct stGameCtx gameCtx;
 
