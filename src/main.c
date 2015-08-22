@@ -73,6 +73,7 @@ __ret:
 int main(int argc, char *argv[]) {
     gameCtx game;
     gfmAudioQuality audSettings;
+    gfmInput *pInput;
     gfmRV rv;
     int bbufWidth, bbufHeight, dps, fps, height, isFullscreen, ups, width;
     
@@ -148,6 +149,11 @@ int main(int argc, char *argv[]) {
     rv = gfm_initAudio(game.pCtx, audSettings);
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Shorten the double press window
+    rv = gfm_getInput(&pInput, game.pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmInput_setMultiDelay(pInput, 150/*ms*/);
+    ASSERT(rv == GFMRV_OK, rv);
     // Bind keys
 #define BIND_NEW_KEY(handle, key) \
     rv = gfm_addVirtualKey(&(game.handle_##handle), game.pCtx); \

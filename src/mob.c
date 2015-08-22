@@ -42,8 +42,12 @@ struct stMob {
     int atkPower;
     /** (Redundant) The mob's type */
     int type;
+    /** Previous movement */
+    int lastMove;
+    /** For how long we can dash */
+    int dashTime;
     /** For how long we've been dashing */
-    int dashTimer;
+    int curDashTimer;
     /** Horizontal speed when dashing */
     double dashHorSpeed;
     /** Vertical speed when dashing */
@@ -105,26 +109,29 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     gfmRV rv;
     gfmSprite *pSpr;
     gfmObject *pObj1, *pObj2;
-    int atkType, scanType, scanWidth, scanHeight, width;
+    int atkType, dashTime, scanType, scanWidth, scanHeight, width;
     double dashHorSpeed, dashVerSpeed, horSpeed, verSpeed;
     
     ASSERT(pMob, GFMRV_ARGUMENTS_BAD);
     ASSERT(pGame, GFMRV_ARGUMENTS_BAD);
     // TODO Add more types
-    ASSERT(type == player || type == npc || type == shadow,
+    ASSERT(type == player || type == npc || type == shadow || type == wall,
             GFMRV_ARGUMENTS_BAD);
     
     // Retrieve all needed objects
+    pSpr = 0;
+    pObj1 = 0;
+    pObj2 = 0;
+    
     gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj1, gfmObject_getNew);
     gfmGenArr_push(pGame->pObjs);
-    gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj2, gfmObject_getNew);
-    gfmGenArr_push(pGame->pObjs);
-    gfmGenArr_getNextRef(gfmSprite, pGame->pSprs, 1, pSpr, gfmSprite_getNew);
-    gfmGenArr_push(pGame->pSprs);
     
-    pMob->pSelf = pSpr;
-    pMob->pScan = pObj1;
-    pMob->pAtk = pObj2;
+    if (type != wall) {
+        gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj2, gfmObject_getNew);
+        gfmGenArr_push(pGame->pObjs);
+        gfmGenArr_getNextRef(gfmSprite, pGame->pSprs, 1, pSpr, gfmSprite_getNew);
+        gfmGenArr_push(pGame->pSprs);
+    }
     
     // Initialize the mob according to its type
     switch (type) {
@@ -137,10 +144,12 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
             scanWidth = 64;
             scanHeight = 24;
             
-            dashHorSpeed = 200;
-            dashVerSpeed = 100;
-            horSpeed = 100;
-            verSpeed = 50;
+            dashTime = 96;
+            
+            dashHorSpeed = 128;
+            dashVerSpeed = 96;
+            horSpeed = 48;
+            verSpeed = 32;
         } break;
         case npc: {
             atkType = npc_atk;
@@ -150,17 +159,29 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
             atkType = shadow_atk;
             scanType = shadow_scan;
         } break;
+        case wall: {
+        } break;
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
-    rv = gfmSprite_init(pMob->pSelf, 0/*x*/, 0/*y*/, width, 4/*height*/,
-            pGame->pSset32x32, -10/*offX*/, -28/*offY*/, pMob/*pChild*/, type);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmObject_init(pMob->pAtk, -100/*x*/, -100/*y*/, (32 - width) / 2,
-            4/*height*/, pMob/*pChild*/, atkType);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmObject_init(pMob->pScan, -100/*x*/, -100/*y*/, scanWidth,
-            scanHeight, pMob/*pChild*/, scanType);
-    ASSERT(rv == GFMRV_OK, rv);
+    
+    if (pSpr) {
+        pMob->pSelf = pSpr;
+        rv = gfmSprite_init(pMob->pSelf, 0/*x*/, 0/*y*/, width, 4/*height*/,
+                pGame->pSset32x32, -10/*offX*/, -28/*offY*/, pMob/*pChild*/, type);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    if (pObj1) {
+        pMob->pAtk = pObj1;
+        rv = gfmObject_init(pMob->pAtk, -100/*x*/, -100/*y*/, (32 - width) / 2,
+                4/*height*/, pMob/*pChild*/, atkType);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    if (pObj2) {
+        pMob->pScan = pObj2;
+        rv = gfmObject_init(pMob->pScan, -100/*x*/, -100/*y*/, scanWidth,
+                scanHeight, pMob/*pChild*/, scanType);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
     
     // TODO Load and play animation
     
@@ -169,6 +190,7 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     // TODO Set stats from level and type
     
     pMob->type = type;
+    pMob->dashTime = dashTime;
     pMob->dashHorSpeed = dashHorSpeed;
     pMob->dashVerSpeed = dashVerSpeed;
     pMob->horSpeed = horSpeed;
@@ -194,10 +216,12 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     switch (pMob->type) {
         case player: {
             // Set player's horizontal movement
-            if (pGame->num_right > 2) {
+            if (pGame->num_right >= 2 &&
+                    (pGame->state_right & gfmInput_pressed)) {
                 move = MOVE_DASH_RIGHT;
             }
-            else if (pGame->num_left > 2) {
+            else if (pGame->num_left >= 2 &&
+                    (pGame->state_left & gfmInput_pressed)) {
                 move = MOVE_DASH_LEFT;
             }
             else if (pGame->state_right & gfmInput_pressed) {
@@ -207,10 +231,12 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
                 move = MOVE_LEFT;
             }
             // Set player's horizontal movement
-            if (pGame->num_up > 2) {
+            if (pGame->num_up >= 2 &&
+                    (pGame->state_up & gfmInput_pressed)) {
                 move |= MOVE_DASH_UP;
             }
-            else if (pGame->num_down > 2) {
+            else if (pGame->num_down >= 2 &&
+                    (pGame->state_down & gfmInput_pressed)) {
                 move |= MOVE_DASH_DOWN;
             }
             else if (pGame->state_up & gfmInput_pressed) {
@@ -227,14 +253,20 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
     
-    if (pMob->dashTimer == 0) {
+    if (pMob->curDashTimer <= 0) {
         if (move & MOVE_DASH_LEFT) {
             vx = -pMob->dashHorSpeed;
-            // TODO Set dash timer
+            // Set dash timer
+            if (!(pMob->lastMove & MOVE_DASH_LEFT)) {
+                pMob->curDashTimer =+ pMob->dashTime;
+            }
         }
         else if (move & MOVE_DASH_RIGHT) {
             vx = pMob->dashHorSpeed;
-            // TODO Set dash timer
+            // Set dash timer
+            if (!(pMob->lastMove & MOVE_DASH_RIGHT)) {
+                pMob->curDashTimer =+ pMob->dashTime;
+            }
         }
         else if (move & MOVE_LEFT) {
             vx = -pMob->horSpeed;
@@ -248,9 +280,17 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         
         if (move & MOVE_DASH_UP) {
             vy = -pMob->dashVerSpeed;
+            // Set dash timer
+            if (!(pMob->lastMove & MOVE_DASH_UP)) {
+                pMob->curDashTimer =+ pMob->dashTime;
+            }
         }
         else if (move & MOVE_DASH_DOWN) {
             vy = pMob->dashVerSpeed;
+            // Set dash timer
+            if (!(pMob->lastMove & MOVE_DASH_DOWN)) {
+                pMob->curDashTimer =+ pMob->dashTime;
+            }
         }
         else if (move & MOVE_UP) {
             vy = -pMob->verSpeed;
@@ -263,6 +303,17 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         }
         rv = gfmSprite_setVelocity(pMob->pSelf, vx, vy);
         ASSERT(rv == GFMRV_OK, rv);
+    }
+    // Store the last movement
+    pMob->lastMove = move;
+    
+    if (pMob->curDashTimer > 0) {
+        int elapsed;
+        
+        rv = gfm_getElapsedTime(&elapsed, pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        pMob->curDashTimer -= elapsed;
     }
     
     rv = gfmSprite_update(pMob->pSelf, pGame->pCtx);
@@ -300,5 +351,12 @@ __ret:
 
 gfmRV mob_draw(mob *pMob, gameCtx *pGame) {
     return gfmSprite_draw(pMob->pSelf, pGame->pCtx);
+}
+
+gfmRV mob_isVulnerable(mob *pMob) {
+    if (pMob->curDashTimer <= 0) {
+        return GFMRV_TRUE;
+    }
+    return GFMRV_FALSE;
 }
 

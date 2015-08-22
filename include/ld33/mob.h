@@ -41,5 +41,7 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame);
 
 gfmRV mob_draw(mob *pMob, gameCtx *pGame);
 
+gfmRV mob_isVulnerable(mob *pMob);
+
 #endif /* __MOB_H__ */
 
