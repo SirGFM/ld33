@@ -13,6 +13,11 @@
 /** 'Export' the mob struct */
 typedef struct stMob mob;
 
+enum {
+    EN_SLIME = 0,
+    EN_MAX
+};
+
 /**
  * Alloc a new mob
  */
@@ -31,6 +36,8 @@ gfmRV mob_free(mob **ppMob);
  * @param  pGame The game's global contex
  */
 gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level);
+
+gfmRV mob_setAnimations(mob *pMob, int subtype);
 
 gfmRV mob_setPosition(mob *pMob, int x, int y);
 

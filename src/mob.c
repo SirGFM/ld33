@@ -12,6 +12,43 @@
 #include <string.h>
 
 enum {
+    ANIM_STAND = 0,
+    ANIM_WALK,
+    ANIM_ATK,
+    ANIM_HIT,
+    ANIM_DASH,
+    ANIM_DEATH,
+    ANIM_PL_TRANSFORM,
+    ANIM_PL_MAX,
+};
+#define ANIM_MAX ANIM_PL_TRANSFORM
+
+/** Player animation */
+int pPlayerAnim[] = {
+/*                   */ /*len|fps|loop|frames...*/
+/* ANIM_STAND        */    8 , 8 ,  1 , 16,17,16,17,16,18,16,17,
+/* ANIM_WALK         */    4 , 10,  1 , 19,22,19,20,
+/* ANIM_ATK          */    1 , 0 ,  0 , 16,
+/* ANIM_HIT          */    1 , 0 ,  0 , 16,
+/* ANIM_DASH         */    4 , 12,  1 , 22,24,23,21,
+/* ANIM_DEATH        */    1 , 0 ,  0 , 16,
+/* ANIM_PL_TRANSFORM */    1 , 0 ,  0 , 16,
+/* ANIM_PL_MAX       */    0
+};
+
+/** Slime animation */
+int pSlimeAnim[] = {
+/*            */ /*len|fps|loop|frames...*/
+/* ANIM_STAND */    2 , 8 ,  1 , 48,49,
+/* ANIM_WALK  */    4 , 8 ,  1 , 48,50,51,50,
+/* ANIM_ATK   */    4 , 12,  0 , 50,51,51,50,
+/* ANIM_HIT   */    8 , 8 ,  0 , 52,53,52,53,52,53,52,53,
+/* ANIM_DASH  */    1 , 0 ,  0 , 48,
+/* ANIM_DEATH */    4 , 12,  0 , 52,53,54,55,
+/* ANIM_MAX   */    0
+};
+
+enum {
     MOVE_STAND      = 0x0000,
     MOVE_DOWN       = 0x0001,
     MOVE_LEFT       = 0x0002,
@@ -21,7 +58,9 @@ enum {
     MOVE_DASH_LEFT  = 0x0020,
     MOVE_DASH_RIGHT = 0x0040,
     MOVE_DASH_UP    = 0x0080,
-    MOVE_MAX
+    MOVE_MAX,
+    MOVE_WALK       = 0x000F,
+    MOVE_DASH       = 0x00F0
 };
 
 /** 'Export' the mob struct */
@@ -201,6 +240,36 @@ __ret:
     return rv;
 }
 
+gfmRV mob_setAnimations(mob *pMob, int subtype) {
+    gfmRV rv;
+    int len, *pData;
+    
+#define GET_DATA(data) \
+        pData = data; \
+        len = sizeof(data) / sizeof(int) - 1
+    
+    pData = 0;
+    switch (pMob->type) {
+        case player: GET_DATA(pPlayerAnim); break;
+        case shadow: {
+            switch (subtype) {
+                case EN_SLIME: GET_DATA(pSlimeAnim); break;
+                default: ASSERT(0, GFMRV_FUNCTION_NOT_IMPLEMENTED);
+            }
+        } break;
+        case npc: {
+        } break;
+        case wall: {
+        } break;
+        default: ASSERT(0, GFMRV_FUNCTION_NOT_IMPLEMENTED);
+    }
+#undef GET_DATA
+    
+    rv = gfmSprite_addAnimations(pMob->pSelf, pData, len);
+__ret:
+    return rv;
+}
+
 gfmRV mob_setPosition(mob *pMob, int x, int y) {
     // TODO Convert from world->weird space?
     return gfmSprite_setPosition(pMob->pSelf, x, y);
@@ -250,6 +319,8 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         } break;
         case npc: {
         } break;
+        case wall: {
+        };
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
     
@@ -303,6 +374,15 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         }
         rv = gfmSprite_setVelocity(pMob->pSelf, vx, vy);
         ASSERT(rv == GFMRV_OK, rv);
+        
+        if (vx > 0) {
+            rv = gfmSprite_setDirection(pMob->pSelf, 0/*isFlipped*/);
+            ASSERT(rv == GFMRV_OK, rv);
+        }
+        else if (vx < 0) {
+            rv = gfmSprite_setDirection(pMob->pSelf, 1/*isFlipped*/);
+            ASSERT(rv == GFMRV_OK, rv);
+        }
     }
     // Store the last movement
     pMob->lastMove = move;
@@ -315,6 +395,20 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         
         pMob->curDashTimer -= elapsed;
     }
+    
+    // Set the animation
+    // TODO Check if attacking
+    // TODO Check if hurt
+    if (pMob->lastMove & MOVE_WALK) {
+        rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_WALK);
+    }
+    else if (pMob->lastMove & MOVE_DASH) {
+        rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_DASH);
+    }
+    else {
+        rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_STAND);
+    }
+    ASSERT(rv == GFMRV_OK, rv);
     
     rv = gfmSprite_update(pMob->pSelf, pGame->pCtx);
     ASSERT(rv == GFMRV_OK, rv);

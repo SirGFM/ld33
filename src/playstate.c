@@ -20,6 +20,8 @@ struct stPlaystate {
     int nextState;
     /** World's width */
     int width;
+    /** Player's pointer */
+    mob *pPlayer;
 };
 typedef struct stPlaystate playstate;
 
@@ -53,6 +55,9 @@ static gfmRV playstate_init(gameCtx *pGame) {
     
     rv = mob_init(pMob, pGame, player, 1/*level*/);
     ASSERT(rv == GFMRV_OK, rv);
+    rv = mob_setAnimations(pMob, 0/*unused*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    pState->pPlayer = pMob;
     
     rv = GFMRV_OK;
 __ret:

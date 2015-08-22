@@ -154,6 +154,7 @@ int main(int argc, char *argv[]) {
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmInput_setMultiDelay(pInput, 150/*ms*/);
     ASSERT(rv == GFMRV_OK, rv);
+    
     // Bind keys
 #define BIND_NEW_KEY(handle, key) \
     rv = gfm_addVirtualKey(&(game.handle_##handle), game.pCtx); \
@@ -172,6 +173,8 @@ int main(int argc, char *argv[]) {
     BIND_KEY(right, gfmKey_d);
     BIND_NEW_KEY(up, gfmKey_up);
     BIND_KEY(up, gfmKey_w);
+    BIND_NEW_KEY(atk, gfmKey_x);
+    BIND_KEY(atk, gfmKey_space);
     BIND_NEW_KEY(quit, gfmKey_esc);
     
 #undef BIND_NEW_KEY
