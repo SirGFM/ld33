@@ -12,15 +12,15 @@
 #include <string.h>
 
 enum {
-    MOVE_STAND = 0,
-    MOVE_DOWN,
-    MOVE_LEFT,
-    MOVE_RIGHT,
-    MOVE_UP,
-    MOVE_DASH_DOWN,
-    MOVE_DASH_LEFT,
-    MOVE_DASH_RIGHT,
-    MOVE_DASH_UP,
+    MOVE_STAND      = 0x0000,
+    MOVE_DOWN       = 0x0001,
+    MOVE_LEFT       = 0x0002,
+    MOVE_RIGHT      = 0x0004,
+    MOVE_UP         = 0x0008,
+    MOVE_DASH_DOWN  = 0x0010,
+    MOVE_DASH_LEFT  = 0x0020,
+    MOVE_DASH_RIGHT = 0x0040,
+    MOVE_DASH_UP    = 0x0080,
     MOVE_MAX
 };
 
@@ -63,8 +63,10 @@ gfmRV mob_getNew(mob **ppMob) {
     ASSERT(ppMob, GFMRV_ARGUMENTS_BAD);
     ASSERT(!(*ppMob), GFMRV_ARGUMENTS_BAD);
     
-    *ppMob = (mob*)malloc(sizeof(ppMob));
+    *ppMob = (mob*)malloc(sizeof(mob));
     ASSERT(*ppMob, GFMRV_ALLOC_FAILED);
+    
+    memset(*ppMob, 0x0, sizeof(mob));
     
     rv = GFMRV_OK;
 __ret:
