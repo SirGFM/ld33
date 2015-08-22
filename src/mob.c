@@ -11,6 +11,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum {
+    MOVE_STAND = 0,
+    MOVE_DOWN,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+    MOVE_UP,
+    MOVE_DASH_DOWN,
+    MOVE_DASH_LEFT,
+    MOVE_DASH_RIGHT,
+    MOVE_DASH_UP,
+    MOVE_MAX
+};
+
 /** 'Export' the mob struct */
 struct stMob {
     /** The mob's sprite and main hitbox */
@@ -27,6 +40,18 @@ struct stMob {
     int health;
     /** Current attack power (i.e., how much damage it deal) */
     int atkPower;
+    /** (Redundant) The mob's type */
+    int type;
+    /** For how long we've been dashing */
+    int dashTimer;
+    /** Horizontal speed when dashing */
+    double dashHorSpeed;
+    /** Vertical speed when dashing */
+    double dashVerSpeed;
+    /** Horizontal speed */
+    double horSpeed;
+    /** Vertical speed */
+    double verSpeed;
 };
 
 /**
@@ -79,6 +104,7 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     gfmSprite *pSpr;
     gfmObject *pObj1, *pObj2;
     int atkType, scanType, scanWidth, scanHeight, width;
+    double dashHorSpeed, dashVerSpeed, horSpeed, verSpeed;
     
     ASSERT(pMob, GFMRV_ARGUMENTS_BAD);
     ASSERT(pGame, GFMRV_ARGUMENTS_BAD);
@@ -108,6 +134,11 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
             
             scanWidth = 64;
             scanHeight = 24;
+            
+            dashHorSpeed = 200;
+            dashVerSpeed = 100;
+            horSpeed = 100;
+            verSpeed = 50;
         } break;
         case npc: {
             atkType = npc_atk;
@@ -135,6 +166,12 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     
     // TODO Set stats from level and type
     
+    pMob->type = type;
+    pMob->dashHorSpeed = dashHorSpeed;
+    pMob->dashVerSpeed = dashVerSpeed;
+    pMob->horSpeed = horSpeed;
+    pMob->verSpeed = verSpeed;
+    
     rv = GFMRV_OK;
 __ret:
     return rv;
@@ -146,10 +183,85 @@ gfmRV mob_setPosition(mob *pMob, int x, int y) {
 }
 
 gfmRV mob_update(mob *pMob, gameCtx *pGame) {
+    double vx, vy;
     gfmRV rv;
-    int h, w, x, y;
+    int move, h, w, x, y;
     
-    // TODO Check type and 'advance the AI'
+    // Check type and 'advance the AI'
+    move = MOVE_STAND;
+    switch (pMob->type) {
+        case player: {
+            // Set player's horizontal movement
+            if (pGame->num_right > 2) {
+                move = MOVE_DASH_RIGHT;
+            }
+            else if (pGame->num_left > 2) {
+                move = MOVE_DASH_LEFT;
+            }
+            else if (pGame->state_right & gfmInput_pressed) {
+                move = MOVE_RIGHT;
+            }
+            else if (pGame->state_left & gfmInput_pressed) {
+                move = MOVE_LEFT;
+            }
+            // Set player's horizontal movement
+            if (pGame->num_up > 2) {
+                move |= MOVE_DASH_UP;
+            }
+            else if (pGame->num_down > 2) {
+                move |= MOVE_DASH_DOWN;
+            }
+            else if (pGame->state_up & gfmInput_pressed) {
+                move |= MOVE_UP;
+            }
+            else if (pGame->state_down & gfmInput_pressed) {
+                move |= MOVE_DOWN;
+            }
+        } break;
+        case shadow: {
+        } break;
+        case npc: {
+        } break;
+        default: ASSERT(0, GFMRV_INTERNAL_ERROR);
+    }
+    
+    if (pMob->dashTimer == 0) {
+        if (move & MOVE_DASH_LEFT) {
+            vx = -pMob->dashHorSpeed;
+            // TODO Set dash timer
+        }
+        else if (move & MOVE_DASH_RIGHT) {
+            vx = pMob->dashHorSpeed;
+            // TODO Set dash timer
+        }
+        else if (move & MOVE_LEFT) {
+            vx = -pMob->horSpeed;
+        }
+        else if (move & MOVE_RIGHT) {
+            vx = pMob->horSpeed;
+        }
+        else {
+            vx = 0;
+        }
+        
+        if (move & MOVE_DASH_UP) {
+            vy = -pMob->dashVerSpeed;
+        }
+        else if (move & MOVE_DASH_DOWN) {
+            vy = pMob->dashVerSpeed;
+        }
+        else if (move & MOVE_UP) {
+            vy = -pMob->verSpeed;
+        }
+        else if (move & MOVE_DOWN) {
+            vy = pMob->verSpeed;
+        }
+        else {
+            vy = 0;
+        }
+        rv = gfmSprite_setVelocity(pMob->pSelf, vx, vy);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
     
     rv = gfmSprite_update(pMob->pSelf, pGame->pCtx);
     ASSERT(rv == GFMRV_OK, rv);
