@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     gameCtx game;
     gfmAudioQuality audSettings;
     gfmRV rv;
-    int bbufWidth, bbufHeight, dps, fps, isFullscreen, ups;
+    int bbufWidth, bbufHeight, dps, fps, height, isFullscreen, ups, width;
     
     // Clean everything before hand
     memset(&game, 0x0, sizeof(gameCtx));
@@ -56,20 +56,44 @@ int main(int argc, char *argv[]) {
     
     // 'Parse' options
     isFullscreen = 0;
+    width = 640;
+    height = 480;
     audSettings = gfmAudio_defQuality;
     while (argc > 1) {
         #define GETARG(opt) strcmp(argv[argc - 1], opt) == 0
         
-        if (GETARG("full")) {
+        if (GETARG("-full") || GETARG("-f")) {
             isFullscreen = 1;
         }
-        else if (GETARG("noaudio")) {
+        else if (GETARG("-noaudio") || GETARG("-m")) {
             rv =  gfm_disableAudio(game.pCtx);
             ASSERT(rv == GFMRV_OK, rv);
         }
-        else if (GETARG("badaudio")) {
+        else if (GETARG("-badaudio") || GETARG("-l")) {
             // TODO Test with lowQuality
             audSettings = gfmAudio_medQuality;
+        }
+        else if (GETARG("-width") || GETARG("-w")) {
+            char *pTmp;
+            
+            width = 0;
+            pTmp = argv[argc];
+            while (*pTmp) {
+                width = width * 10 + (*pTmp) - '0';
+                
+                pTmp++;
+            }
+        }
+        else if (GETARG("-height") || GETARG("-h")) {
+            char *pTmp;
+            
+            height = 0;
+            pTmp = argv[argc];
+            while (*pTmp) {
+                height = height * 10 + (*pTmp) - '0';
+                
+                pTmp++;
+            }
         }
         
         #undef GETARG
@@ -84,8 +108,8 @@ int main(int argc, char *argv[]) {
                 0/*defRes*/, 0/*dontResize*/);
     }
     else {
-        rv = gfm_initGameWindow(game.pCtx, bbufWidth, bbufHeight, 640/*wnd w*/,
-                480/*wnd h*/, 0/*dontResize*/);
+        rv = gfm_initGameWindow(game.pCtx, bbufWidth, bbufHeight, width, height,
+                0/*dontResize*/);
     }
     ASSERT(rv == GFMRV_OK, rv);
     
