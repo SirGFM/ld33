@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NEG_INF -100000
+
 enum {
     ANIM_STAND = 0,
     ANIM_WALK,
@@ -90,6 +92,12 @@ struct stMob {
     int dashTime;
     /** For how long we've been dashing */
     int curDashTimer;
+    int nearbyShadowCount;
+    int dist;
+    int distX;
+    int distY;
+    int plLastPosX;
+    int plLastPosY;
     /** Horizontal speed when dashing */
     double dashHorSpeed;
     /** Vertical speed when dashing */
@@ -99,6 +107,26 @@ struct stMob {
     /** Vertical speed */
     double verSpeed;
 };
+
+static gfmRV mob_getDist(mob *pSelf, int ox, int oy) {
+    gfmRV rv;
+    
+    int sx, sy, w, h;
+
+    rv = gfmSprite_getPosition(&sx, &sy, pSelf->pSelf);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmSprite_getDimensions(&w, &h, pSelf->pSelf);
+    ASSERT(rv == GFMRV_OK, rv);
+    sx += w / 2;
+    sy += h / 2;
+
+    pSelf->distX = sx - ox;
+    pSelf->distY = oy - sy;
+    
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
 
 /**
  * Alloc a new mob
@@ -198,6 +226,8 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     
     pMob->type = type;
     pMob->isAlive = 1;
+    pMob->plLastPosX = NEG_INF;
+    pMob->plLastPosY = NEG_INF;
     
     rv = gfmSprite_setFrame(pMob->pSelf, 16/*frame*/);
 __ret:
@@ -277,6 +307,11 @@ gfmRV mob_setTraits(mob *pMob, int traits) {
     return GFMRV_OK;
 }
 
+gfmRV mob_setDist(mob *pMob, int dist) {
+    pMob->dist = dist * dist;
+    return GFMRV_OK;
+}
+
 gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     double vx, vy;
     gfmRV rv;
@@ -287,7 +322,9 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         goto __ret;
     }
     
+    //==========================================================================
     // Check type and 'advance the AI'
+    //
     move = MOVE_STAND;
     switch (pMob->type) {
         case player: {
@@ -321,15 +358,56 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
             else if (pGame->state_down & gfmInput_pressed) {
                 move |= MOVE_DOWN;
             }
-        } break;
+        } break; // player
         case shadow: {
-        } break;
+            if ((pMob->traits & TR_SWARMER) && pMob->nearbyShadowCount >= 3) {
+                // TODO Check distance to player
+                // Make it follow/attack the player
+            }
+            else if (pMob->traits & TR_ANGRY) {
+            }
+            else if (pMob->traits & TR_COWARD) {
+                int dist;
+
+                if (pMob->plLastPosX != NEG_INF) {
+                    rv = mob_getDist(pMob, pMob->plLastPosX, pMob->plLastPosY);
+                    ASSERT(rv == GFMRV_OK, rv);
+
+                    dist  = 1.5 * (pMob->distX * pMob->distX);
+                    dist += 0.8 * (pMob->distY * pMob->distY);
+                }
+                else {
+                    dist = 1000000;
+                }
+                
+                // FUCK! Hard coded values >__<
+                if (dist <= pMob->dist) {
+                    if (pMob->distX != NEG_INF) {
+                        if (pMob->distX < -2) {
+                            move |= MOVE_LEFT;
+                        }
+                        else if (pMob->distX > 2) {
+                            move |= MOVE_RIGHT;
+                        }
+                    }
+                    if (pMob->distY != NEG_INF) {
+                        if (pMob->distY < -2) {
+                            move |= MOVE_DOWN;
+                        }
+                        else if (pMob->distY > 2) {
+                            move |= MOVE_UP;
+                        }
+                    }
+                }
+            }
+        } break; // shadow
         case npc: {
-        } break;
+        } break; // npc
         case wall: {
-        };
+        }; // wall
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
+    //= ( AI ) =================================================================
     
     if (pMob->curDashTimer <= 0) {
         if (move & MOVE_DASH_LEFT) {
@@ -437,6 +515,8 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     rv = gfmObject_setPosition(pMob->pScan, x - w / 2, y - h / 2);
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Reset those, so they can be fully calculated until next frame
+    pMob->nearbyShadowCount = 0;
     // Add it to the quadtree
     rv = collide_obj(pMob->pScan, pGame);
     ASSERT(rv == GFMRV_OK, rv);
@@ -475,5 +555,28 @@ gfmRV mob_getType(int *pType, mob *pMob) {
     *pType = pMob->type;
     
     return GFMRV_OK;
+}
+
+gfmRV mob_setOnView(mob *pSelf, mob *pMob) {
+    gfmRV rv;
+    
+    rv = GFMRV_OK;
+    if (pMob->type == shadow) {
+        pSelf->nearbyShadowCount++;
+    }
+    else if (pMob->type == player) {
+        int w, h;
+        
+        rv = gfmSprite_getPosition(&(pSelf->plLastPosX), &(pSelf->plLastPosY),
+                pMob->pSelf);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmSprite_getDimensions(&w, &h, pMob->pSelf);
+        ASSERT(rv == GFMRV_OK, rv);
+        pSelf->plLastPosX += w / 2;
+        pSelf->plLastPosY += h / 2;
+    }
+    
+__ret:
+    return rv;
 }
 

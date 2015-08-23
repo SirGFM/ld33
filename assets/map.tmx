@@ -70,6 +70,7 @@
   <object id="1" type="player" gid="25" x="16" y="106"/>
   <object id="2" name="l1 angry slime" type="shadow" gid="2147483705" x="112" y="104">
    <properties>
+    <property name="dist" value="80"/>
     <property name="level" value="1"/>
     <property name="subtype" value="slime"/>
     <property name="trait" value="angry"/>

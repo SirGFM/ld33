@@ -4,7 +4,45 @@
 #include <ld33/collision.h>
 #include <ld33/mob.h>
 
-gfmRV collide_mobXWall(gfmObject *pMob, gfmObject *pWall) {
+static gfmRV collide_atkXMob(gfmObject *pAtk, mob *pMob) {
+    gfmRV rv;
+    int type;
+    mob *pSelf;
+    
+    rv = gfmObject_getChild((void**)&pSelf, &type, pAtk);
+    ASSERT(rv == GFMRV_OK, rv);
+    if (pSelf == pMob) {
+        rv = GFMRV_OK;
+        goto __ret;
+    }
+    
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
+
+static gfmRV collide_scanXMob(gfmObject *pScan, mob *pMob) {
+    gfmRV rv;
+    int type;
+    mob *pSelf;
+    
+    // If the scanner is "scanning itself" or is the player, stop
+    rv = gfmObject_getChild((void**)&pSelf, &type, pScan);
+    ASSERT(rv == GFMRV_OK, rv);
+    if (pSelf == pMob || type == player) {
+        rv = GFMRV_OK;
+        goto __ret;
+    }
+    
+    rv = mob_setOnView(pSelf, pMob);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
+
+static gfmRV collide_mobXWall(gfmObject *pMob, gfmObject *pWall) {
     gfmCollision dir;
     gfmRV rv;
     int x, y;
@@ -21,7 +59,10 @@ gfmRV collide_mobXWall(gfmObject *pMob, gfmObject *pWall) {
         x += 1;
     }
     if (dir & gfmCollision_up) {
-        y += 1;
+        y += 2;
+    }
+    else if (dir & gfmCollision_down) {
+        y -= 1;
     }
     
     rv = gfmObject_setPosition(pMob, x, y);
@@ -29,7 +70,7 @@ __ret:
     return rv;
 }
 
-gfmRV doCollide(gameCtx *pGame) {
+static gfmRV doCollide(gameCtx *pGame) {
     gfmRV rv;
     
     rv = GFMRV_QUADTREE_OVERLAPED;
@@ -62,8 +103,20 @@ gfmRV doCollide(gameCtx *pGame) {
         else if (type2 == collideable && (type1 == player || type1 == shadow)) {
             rv = collide_mobXWall(pObj1, pObj2);
         }
+        else if (type1 == scan && (type2 == player || type2 == shadow)) {
+            rv = collide_scanXMob(pObj1, pMob2);
+        }
+        else if (type2 == scan && (type1 == player || type1 == shadow)) {
+            rv = collide_scanXMob(pObj2, pMob1);
+        }
+        else if (type1 == atk && (type2 == player || type2 == shadow)) {
+            rv = collide_atkXMob(pObj1, pMob2);
+        }
+        else if (type2 == atk && (type1 == player || type1 == shadow)) {
+            rv = collide_atkXMob(pObj2, pMob1);
+        }
         else {
-            // TODO Collide atk vs hitbox and hitbox vs scan
+            // Collision between mob's hitboxes, do nothing!
         }
         ASSERT(rv == GFMRV_OK, rv);
         

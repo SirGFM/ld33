@@ -24,6 +24,7 @@ enum {
     TR_COWARD  = 0x0001,
     TR_NEUTRAL = 0x0002,
     TR_ANGRY   = 0x0004,
+    TR_SWARMER = 0x0008,
     TR_MAX
 };
 
@@ -52,6 +53,8 @@ gfmRV mob_setPosition(mob *pMob, int x, int y);
 
 gfmRV mob_setTraits(mob *pMob, int traits);
 
+gfmRV mob_setDist(mob *pMob, int dist);
+
 /**
  * Update the sprite and add it to the quadtree
  */
@@ -62,6 +65,8 @@ gfmRV mob_draw(mob *pMob, gameCtx *pGame);
 gfmRV mob_isVulnerable(mob *pMob);
 
 gfmRV mob_getType(int *pType, mob *pMob);
+
+gfmRV mob_setOnView(mob *pSelf, mob *pMob);
 
 #endif /* __MOB_H__ */
 

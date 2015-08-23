@@ -122,8 +122,9 @@ static gfmRV playstate_init(gameCtx *pGame) {
                 pState->pPlayer = pMob;
             } // if type == player
             else if (CHECK_TYPE("shadow")) {
-                int num, level, subtype, traits;
+                int num, dist, level, subtype, traits;
                 
+                dist = 48;
                 level = 1;
                 subtype = EN_NONE;
                 traits = TR_NONE;
@@ -163,8 +164,18 @@ static gfmRV playstate_init(gameCtx *pGame) {
                         else if (CHECK_VAL("angry")) {
                             traits |= TR_ANGRY;
                         }
+                        else if (CHECK_VAL("swarmer")) {
+                            traits |= TR_SWARMER;
+                        }
                         else {
                             ASSERT(0, GFMRV_INTERNAL_ERROR);
+                        }
+                    }
+                    else if (CHECK_KEY("dist")) {
+                        dist = 0;
+                        while (*pVal) {
+                            dist = dist * 10 + (*pVal) - '0';
+                            pVal++;
                         }
                     }
                     else {
@@ -182,6 +193,8 @@ static gfmRV playstate_init(gameCtx *pGame) {
                 rv = mob_setTraits(pMob, traits);
                 ASSERT(rv == GFMRV_OK, rv);
                 rv = mob_setAnimations(pMob, subtype);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = mob_setDist(pMob, dist);
                 ASSERT(rv == GFMRV_OK, rv);
             } // if pType == "shadow"
             else if (CHECK_TYPE("wall")) {
@@ -216,7 +229,9 @@ static gfmRV playstate_init(gameCtx *pGame) {
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmGroup_setDefAcceleration(pState->pGrp, 0/*ax*/, 2/*ay*/);
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_setDeathOnLeave(pState->pGrp, 1/*doDie*/);
+    rv = gfmGroup_setDeathOnTime(pState->pGrp, 4000/*ttl*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDeathOnLeave(pState->pGrp, 0/*dontDie*/);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmGroup_setDrawOrder(pState->pGrp, gfmDrawOrder_linear);
     ASSERT(rv == GFMRV_OK, rv);
@@ -279,7 +294,7 @@ static gfmRV playstate_update(gameCtx *pGame) {
     }
     
     // Add a few particles every frame
-    num = 3 + main_getPRNG(pGame) % 7;
+    num = 5 + main_getPRNG(pGame) % 10;
     while (num > 0) {
         gfmSprite *pSpr;
         int tile, vx, vy, rng, x, y;
@@ -307,7 +322,7 @@ static gfmRV playstate_update(gameCtx *pGame) {
         
         rng = main_getPRNG(pGame);
         if (rng < 0) rng = -rng;
-        x += 8 + ((rng % 40) - 2) * 4;
+        x += (rng % 60) * 8 - 160;
         y = 8;
         
         rv = gfmGroup_setPosition(pState->pGrp, x, y);
