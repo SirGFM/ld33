@@ -51,6 +51,18 @@ int pSlimeAnim[] = {
 /* ANIM_MAX   */    0
 };
 
+/** Angry slime animation */
+int pAngrySlimeAnim[] = {
+/*            */ /*len|fps|loop|frames...*/
+/* ANIM_STAND */    2 , 8 ,  1 , 56,57,
+/* ANIM_WALK  */    4 , 8 ,  1 , 56,58,59,58,
+/* ANIM_ATK   */    4 , 12,  0 , 58,59,59,58,
+/* ANIM_HIT   */    8 , 8 ,  0 , 60,61,60,61,60,61,60,61,
+/* ANIM_DASH  */    1 , 0 ,  0 , 56,
+/* ANIM_DEATH */    4 , 12,  0 , 60,61,62,63,
+/* ANIM_MAX   */    0
+};
+
 enum {
     MOVE_STAND      = 0x0000,
     MOVE_DOWN       = 0x0001,
@@ -108,10 +120,16 @@ struct stMob {
     double verSpeed;
 };
 
-static gfmRV mob_getDist(mob *pSelf, int ox, int oy) {
+static gfmRV mob_getDist(int *pDist, mob *pSelf, int ox, int oy) {
     gfmRV rv;
     
     int sx, sy, w, h;
+    
+    if (ox == NEG_INF) {
+        *pDist = 1000000;
+        rv = GFMRV_OK;
+        goto __ret;
+    }
 
     rv = gfmSprite_getPosition(&sx, &sy, pSelf->pSelf);
     ASSERT(rv == GFMRV_OK, rv);
@@ -122,6 +140,9 @@ static gfmRV mob_getDist(mob *pSelf, int ox, int oy) {
 
     pSelf->distX = sx - ox;
     pSelf->distY = oy - sy;
+    
+    *pDist  = 1.5 * (pSelf->distX * pSelf->distX);
+    *pDist += 0.8 * (pSelf->distY * pSelf->distY);
     
     rv = GFMRV_OK;
 __ret:
@@ -248,6 +269,7 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
         case shadow: {
             switch (subtype) {
                 case EN_SLIME: GET_DATA(pSlimeAnim); break;
+                case EN_ANGRYSLIME: GET_DATA(pAngrySlimeAnim); break;
                 default: ASSERT(0, GFMRV_FUNCTION_NOT_IMPLEMENTED);
             }
         } break;
@@ -363,43 +385,51 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
             if ((pMob->traits & TR_SWARMER) && pMob->nearbyShadowCount >= 3) {
                 // TODO Check distance to player
                 // Make it follow/attack the player
-            }
+            } // if swarmer
             else if (pMob->traits & TR_ANGRY) {
-            }
+                int dist;
+                
+                rv = mob_getDist(&dist, pMob, pMob->plLastPosX,
+                        pMob->plLastPosY);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                if (dist <= pMob->dist) {
+                    if (pMob->distX < -2) {
+                        move |= MOVE_RIGHT;
+                    }
+                    else if (pMob->distX > 2) {
+                        move |= MOVE_LEFT;
+                    }
+                    if (pMob->distY < -2) {
+                        move |= MOVE_UP;
+                    }
+                    else if (pMob->distY > 2) {
+                        move |= MOVE_DOWN;
+                    }
+                } // if dist
+            } // if angry
             else if (pMob->traits & TR_COWARD) {
                 int dist;
-
-                if (pMob->plLastPosX != NEG_INF) {
-                    rv = mob_getDist(pMob, pMob->plLastPosX, pMob->plLastPosY);
-                    ASSERT(rv == GFMRV_OK, rv);
-
-                    dist  = 1.5 * (pMob->distX * pMob->distX);
-                    dist += 0.8 * (pMob->distY * pMob->distY);
-                }
-                else {
-                    dist = 1000000;
-                }
                 
-                // FUCK! Hard coded values >__<
+                rv = mob_getDist(&dist, pMob, pMob->plLastPosX,
+                        pMob->plLastPosY);
+                ASSERT(rv == GFMRV_OK, rv);
+                
                 if (dist <= pMob->dist) {
-                    if (pMob->distX != NEG_INF) {
-                        if (pMob->distX < -2) {
-                            move |= MOVE_LEFT;
-                        }
-                        else if (pMob->distX > 2) {
-                            move |= MOVE_RIGHT;
-                        }
+                    if (pMob->distX < -2) {
+                        move |= MOVE_LEFT;
                     }
-                    if (pMob->distY != NEG_INF) {
-                        if (pMob->distY < -2) {
-                            move |= MOVE_DOWN;
-                        }
-                        else if (pMob->distY > 2) {
-                            move |= MOVE_UP;
-                        }
+                    else if (pMob->distX > 2) {
+                        move |= MOVE_RIGHT;
                     }
-                }
-            }
+                    if (pMob->distY < -2) {
+                        move |= MOVE_DOWN;
+                    }
+                    else if (pMob->distY > 2) {
+                        move |= MOVE_UP;
+                    }
+                } // if dist
+            } // if coward
         } break; // shadow
         case npc: {
         } break; // npc

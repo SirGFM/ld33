@@ -147,12 +147,9 @@ static gfmRV playstate_init(gameCtx *pGame) {
                         }
                     }
                     else if (CHECK_KEY("subtype")) {
-                        if (CHECK_VAL("slime")) {
-                            subtype = EN_SLIME;
-                        }
-                        else {
-                            ASSERT(0, GFMRV_INTERNAL_ERROR);
-                        }
+                        if (CHECK_VAL("slime")) subtype = EN_SLIME;
+                        else if (CHECK_VAL("angrySlime")) subtype = EN_ANGRYSLIME;
+                        else ASSERT(0, GFMRV_INTERNAL_ERROR);
                     }
                     else if (CHECK_KEY("trait")) {
                         if (CHECK_VAL("coward")) {
