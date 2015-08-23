@@ -288,6 +288,7 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
         ASSERT(rv == GFMRV_OK, rv);
     }
     
+    pMob->level = level;
     pMob->type = type;
     pMob->isAlive = 1;
     pMob->plLastPosX = NEG_INF;
@@ -335,6 +336,7 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
             pMob->verSpeed = 32;
             
             pMob->atkPower = 1;
+            pMob->health = 10;
         } break;
         case npc: {
         } break;
@@ -345,12 +347,31 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
             pMob->dashVerSpeed = 64;
             pMob->horSpeed = 32;
             pMob->verSpeed = 24;
+            
+            switch (subtype) {
+                case EN_SLIME: {
+                    pMob->atkPower = 0;
+                    pMob->health = 2;
+                } break;
+                case EN_ANGRYSLIME: {
+                    pMob->atkPower = 2;
+                    pMob->health = 3;
+                } break;
+                case EN_SWARMSLIME: {
+                    pMob->atkPower = 1;
+                    pMob->health = 1;
+                } break;
+                default: ASSERT(0, GFMRV_FUNCTION_NOT_IMPLEMENTED);
+            }
         } break;
         case wall: {
-            pMob->health = 4;
+            pMob->health = 2;
         } break;
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
+    
+    pMob->atkPower = pMob->atkPower + pMob->atkPower * (pMob->level - 1) * 0.5;
+    pMob->health = pMob->health + pMob->health * (pMob->level - 1) * 0.5;
     
     rv = gfmSprite_addAnimations(pMob->pSelf, pData, len);
 __ret:
@@ -546,7 +567,7 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
             vy = 0;
         }
         
-        if (doAttack == 0) {
+        if (doAttack == 0 && (!pMob->isHurt || pMob->curDashTimer > 0)) {
             if (pMob->type != player) {
                 if (vx != 0) {
                     int rng;
@@ -578,6 +599,10 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
                 rv = gfmSprite_setDirection(pMob->pSelf, 1/*isFlipped*/);
                 ASSERT(rv == GFMRV_OK, rv);
             }
+        }
+        else if (pMob->isHurt) {
+            rv = gfmSprite_setVelocity(pMob->pSelf, 0, 0);
+            ASSERT(rv == GFMRV_OK, rv);
         }
     }
     // Store the last movement
@@ -784,6 +809,9 @@ gfmRV mob_attack(mob *pSelf, mob *pMob) {
         
         if (pMob->health > 0) {
             rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_HIT);
+            ASSERT(rv == GFMRV_OK, rv);
+            
+            rv = gfmSprite_setVelocity(pMob->pSelf, 0, 0);
             ASSERT(rv == GFMRV_OK, rv);
         }
         else {
