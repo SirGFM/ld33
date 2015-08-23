@@ -13,6 +13,7 @@ CC = gcc
 #==============================================================================
   OBJS =                             \
           $(OBJDIR)/collision.o      \
+          $(OBJDIR)/introstate.o     \
           $(OBJDIR)/main.o           \
           $(OBJDIR)/playstate.o      \
           $(OBJDIR)/mob.o            

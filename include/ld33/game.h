@@ -32,6 +32,7 @@ gfmGenArr_define(gfmObject);
 
 enum enStateTypes {
     state_none = 0,
+    state_introstate,
     state_playstate,
     state_max
 };

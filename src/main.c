@@ -4,11 +4,37 @@
  * The game's entry point
  */
 #include <ld33/game.h>
+#include <ld33/introstate.h>
 #include <ld33/main.h>
 #include <ld33/playstate.h>
 
 #include <string.h>
 #include <time.h>
+
+gfmRV main_cleanRenderGroup(gameCtx *pGame) {
+    gfmRV rv;
+    
+    gfmGroup_free(&(pGame->pRender));
+    
+    rv = gfmGroup_getNew(&(pGame->pRender));
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefSpriteset(pGame->pRender, pGame->pSset32x32);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefDimensions(pGame->pRender, 32/*width*/, 32/*height*/,
+        0/*offX*/, 0/*offY*/);
+    rv = gfmGroup_setDeathOnLeave(pGame->pRender, 0/*dontDie*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDeathOnTime(pGame->pRender, 0/*ttl*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDrawOrder(pGame->pRender, gfmDrawOrder_topFirst);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_preCache(pGame->pRender, 12, 0);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
 
 int main_getPRNG(gameCtx *pGame) {
     long int tmp = pGame->seed;
@@ -235,35 +261,23 @@ int main(int argc, char *argv[]) {
     rv = gfmQuadtree_getNew(&(game.pQt));
     ASSERT(rv == GFMRV_OK, rv);
     
-    // Initialize the rendering group
-    rv = gfmGroup_getNew(&(game.pRender));
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_setDefSpriteset(game.pRender, game.pSset32x32);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_setDefDimensions(game.pRender, 32/*width*/, 32/*height*/,
-        0/*offX*/, 0/*offY*/);
-    rv = gfmGroup_setDeathOnLeave(game.pRender, 0/*dontDie*/);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_setDeathOnTime(game.pRender, 0/*ttl*/);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_setDrawOrder(game.pRender, gfmDrawOrder_topFirst);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_preCache(game.pRender, 12, 0);
-    ASSERT(rv == GFMRV_OK, rv);
-    
     // Play the song
     rv = gfm_playAudio(0, game.pCtx, game.song, 0.8);
     ASSERT(rv == GFMRV_OK, rv);
     
     // Loop...
-    game.state = state_playstate;
+    game.state = state_introstate;
+    //game.state = state_playstate;
     while (gfm_didGetQuitFlag(game.pCtx) == GFMRV_FALSE) {
         // Run the current state
         switch (game.state) {
+            case state_introstate: rv = introstate_loop(&game); break;
             case state_playstate: rv = playstate_loop(&game); break;
             default: rv = GFMRV_INTERNAL_ERROR;
         }
         ASSERT(rv == GFMRV_OK, rv);
+        
+        game.quitState = 0;
     }
     
     rv = GFMRV_OK;

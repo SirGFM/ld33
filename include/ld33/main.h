@@ -8,6 +8,8 @@
 
 #include <ld33/game.h>
 
+gfmRV main_cleanRenderGroup(gameCtx *pGame);
+
 int main_getPRNG(gameCtx *pGame);
 
 /**

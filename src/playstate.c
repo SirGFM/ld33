@@ -46,6 +46,10 @@ static gfmRV playstate_init(gameCtx *pGame) {
     pState = (playstate*)pGame->pState;
     pParser = 0;
     
+    // Initialize the rendering group
+    rv = main_cleanRenderGroup(pGame);
+    ASSERT(rv == GFMRV_OK, rv);
+    
     // Parse all objects
     rv = gfmParser_getNew(&pParser);
     ASSERT(rv == GFMRV_OK, rv);
