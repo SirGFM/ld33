@@ -45,7 +45,7 @@ int pSlimeAnim[] = {
 /*            */ /*len|fps|loop|frames...*/
 /* ANIM_STAND */    2 , 8 ,  1 , 48,49,
 /* ANIM_WALK  */    4 , 8 ,  1 , 48,50,51,50,
-/* ANIM_ATK   */    4 , 12,  0 , 50,51,51,50,
+/* ANIM_ATK   */    6 , 12,  0 , 50,51,51,51,51,50,
 /* ANIM_HIT   */    8 , 8 ,  0 , 52,53,52,53,52,53,52,53,
 /* ANIM_DASH  */    1 , 0 ,  0 , 48,
 /* ANIM_DEATH */    4 , 12,  0 , 52,53,54,55,
@@ -57,7 +57,7 @@ int pAngrySlimeAnim[] = {
 /*            */ /*len|fps|loop|frames...*/
 /* ANIM_STAND */    2 , 8 ,  1 , 56,57,
 /* ANIM_WALK  */    4 , 8 ,  1 , 56,58,59,58,
-/* ANIM_ATK   */    4 , 12,  0 , 58,59,59,58,
+/* ANIM_ATK   */    6 , 12,  0 , 58,59,59,59,59,58,
 /* ANIM_HIT   */    8 , 8 ,  0 , 60,61,60,61,60,61,60,61,
 /* ANIM_DASH  */    1 , 0 ,  0 , 56,
 /* ANIM_DEATH */    4 , 12,  0 , 60,61,62,63,
@@ -69,7 +69,7 @@ int pSwarmSlimeAnim[] = {
 /*            */ /*len|fps|loop|frames...*/
 /* ANIM_STAND */    2 , 8 ,  1 , 64,65,
 /* ANIM_WALK  */    4 , 8 ,  1 , 64,66,67,66,
-/* ANIM_ATK   */    4 , 12,  0 , 66,67,67,66,
+/* ANIM_ATK   */    6 , 12,  0 , 66,67,67,67,67,66,
 /* ANIM_HIT   */    8 , 8 ,  0 , 68,69,68,69,68,69,68,69,
 /* ANIM_DASH  */    1 , 0 ,  0 , 64,
 /* ANIM_DEATH */    4 , 12,  0 , 68,69,70,71,
@@ -131,6 +131,7 @@ struct stMob {
     int curDashTimer;
     int isAttacking;
     int isHurt;
+    int invulnerableTime;
     int nearbyShadowCount;
     int dist;
     int distX;
@@ -332,6 +333,8 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
             pMob->dashVerSpeed = 96;
             pMob->horSpeed = 48;
             pMob->verSpeed = 32;
+            
+            pMob->atkPower = 1;
         } break;
         case npc: {
         } break;
@@ -344,6 +347,7 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
             pMob->verSpeed = 24;
         } break;
         case wall: {
+            pMob->health = 4;
         } break;
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
@@ -593,6 +597,14 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         
         pMob->curDashTimer -= elapsed;
     }
+    if (pMob->invulnerableTime > 0) {
+        int elapsed;
+        
+        rv = gfm_getElapsedTime(&elapsed, pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        pMob->invulnerableTime -= elapsed;
+    }
     
     // Set the animation
     // Check if hurt
@@ -725,7 +737,7 @@ gfmRV mob_draw(mob *pMob, gameCtx *pGame) {
 }
 
 gfmRV mob_isVulnerable(mob *pMob) {
-    if (pMob->curDashTimer <= 0) {
+    if (pMob->invulnerableTime <= 0 && pMob->curDashTimer <= 0) {
         return GFMRV_TRUE;
     }
     return GFMRV_FALSE;
@@ -767,6 +779,8 @@ gfmRV mob_attack(mob *pSelf, mob *pMob) {
     if (mob_isVulnerable(pMob) == GFMRV_TRUE) {
         pMob->health -= pSelf->atkPower;
         pMob->isHurt = 1;
+        
+        pMob->invulnerableTime = 500;
         
         if (pMob->health > 0) {
             rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_HIT);
