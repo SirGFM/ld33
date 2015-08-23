@@ -82,6 +82,11 @@ static gfmRV loadAssets(gameCtx *pGame) {
         texIndex, 256/*tileWidth*/, 128/*tileHeight*/);
     ASSERT(rv == GFMRV_OK, rv);
     
+    rv = gfm_loadAudio(&(pGame->song), pGame->pCtx, "mysong.wav", 10);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_setRepeat(pGame->pCtx, pGame->song, 6 * pGame->audioFreq );
+    ASSERT(rv == GFMRV_OK, rv);
+    
     rv = GFMRV_OK;
 __ret:
     return rv;
@@ -111,6 +116,7 @@ int main(int argc, char *argv[]) {
     width = 640;
     height = 480;
     game.maxParts = 2048;
+    game.audioFreq = 44100;
     audSettings = gfmAudio_defQuality;
     while (argc > 1) {
         #define GETARG(opt) strcmp(argv[argc - 1], opt) == 0
@@ -125,6 +131,7 @@ int main(int argc, char *argv[]) {
         else if (GETARG("-badaudio") || GETARG("-l")) {
             // TODO Test with lowQuality
             audSettings = gfmAudio_medQuality;
+            game.audioFreq = 22050;
         }
         else if (GETARG("-width") || GETARG("-w")) {
             char *pTmp;
@@ -244,6 +251,9 @@ int main(int argc, char *argv[]) {
     rv = gfmGroup_preCache(game.pRender, 12, 0);
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Play the song
+    rv = gfm_playAudio(0, game.pCtx, game.song, 0.8);
+    ASSERT(rv == GFMRV_OK, rv);
     
     // Loop...
     game.state = state_playstate;

@@ -85,6 +85,9 @@ struct stGameCtx {
     int num_atk;
     gfmInputState state_quit;
     int num_quit;
+    /** Audios */
+    int audioFreq;
+    int song;
 };
 typedef struct stGameCtx gameCtx;
 
