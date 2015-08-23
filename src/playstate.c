@@ -186,6 +186,12 @@ static gfmRV playstate_init(gameCtx *pGame) {
                 ASSERT(rv == GFMRV_OK, rv);
             } // if pType == "shadow"
             else if (CHECK_TYPE("wall")) {
+                rv = mob_init(pMob, pGame, wall, 1);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = mob_setPosition(pMob, x, y);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = mob_setAnimations(pMob, 0/*unused*/);
+                ASSERT(rv == GFMRV_OK, rv);
             }
             else {
                 ASSERT(0, GFMRV_INTERNAL_ERROR);

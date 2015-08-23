@@ -16,6 +16,9 @@ static gfmRV collide_atkXMob(gfmObject *pAtk, mob *pMob) {
         goto __ret;
     }
     
+    rv = mob_attack(pSelf, pMob);
+    ASSERT(rv == GFMRV_OK, rv);
+    
     rv = GFMRV_OK;
 __ret:
     return rv;
@@ -58,6 +61,9 @@ static gfmRV collide_mobXWall(gfmObject *pMob, gfmObject *pWall) {
     if (dir & gfmCollision_left) {
         x += 1;
     }
+    else if (dir & gfmCollision_left) {
+        x -= 1;
+    }
     if (dir & gfmCollision_up) {
         y += 2;
     }
@@ -97,10 +103,12 @@ static gfmRV doCollide(gameCtx *pGame) {
             ASSERT(rv == GFMRV_OK, rv);
         }
         
-        if (type1 == collideable && (type2 == player || type2 == shadow)) {
+        if ((type1 == wall || type1 == collideable) &&
+                (type2 == player || type2 == shadow)) {
             rv = collide_mobXWall(pObj2, pObj1);
         }
-        else if (type2 == collideable && (type1 == player || type1 == shadow)) {
+        else if ((type2 == wall || type2 == collideable) &&
+                (type1 == player || type1 == shadow)) {
             rv = collide_mobXWall(pObj1, pObj2);
         }
         else if (type1 == scan && (type2 == player || type2 == shadow)) {
@@ -109,10 +117,12 @@ static gfmRV doCollide(gameCtx *pGame) {
         else if (type2 == scan && (type1 == player || type1 == shadow)) {
             rv = collide_scanXMob(pObj2, pMob1);
         }
-        else if (type1 == atk && (type2 == player || type2 == shadow)) {
+        else if (type1 == atk && (type2 == player || type2 == shadow ||
+                type2 == wall)) {
             rv = collide_atkXMob(pObj1, pMob2);
         }
-        else if (type2 == atk && (type1 == player || type1 == shadow)) {
+        else if (type2 == atk && (type1 == player || type1 == shadow ||
+                type1 == wall)) {
             rv = collide_atkXMob(pObj2, pMob1);
         }
         else {

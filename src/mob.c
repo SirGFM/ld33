@@ -76,6 +76,18 @@ int pSwarmSlimeAnim[] = {
 /* ANIM_MAX   */    0
 };
 
+/** Wall animation */
+int pWallAnim[] = {
+/*            */ /*len|fps|loop|frames...*/
+/* ANIM_STAND */    1 , 0 ,  0 , 80,
+/* ANIM_WALK  */    1 , 0 ,  0 , 80,
+/* ANIM_ATK   */    1 , 0 ,  0 , 80,
+/* ANIM_HIT   */    1 , 0 ,  0 , 80,
+/* ANIM_DASH  */    1 , 0 ,  0 , 80,
+/* ANIM_DEATH */    1 , 0 ,  0 , 81,
+/* ANIM_MAX   */    0
+};
+
 enum {
     MOVE_STAND      = 0x0000,
     MOVE_DOWN       = 0x0001,
@@ -118,6 +130,7 @@ struct stMob {
     /** For how long we've been dashing */
     int curDashTimer;
     int isAttacking;
+    int isHurt;
     int nearbyShadowCount;
     int dist;
     int distX;
@@ -214,7 +227,7 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     gfmRV rv;
     gfmSprite *pSpr;
     gfmObject *pObj1, *pObj2;
-    int scanWidth, scanHeight, width;
+    int height, offX, offY, scanWidth, scanHeight, width;
     
     ASSERT(pMob, GFMRV_ARGUMENTS_BAD);
     ASSERT(pGame, GFMRV_ARGUMENTS_BAD);
@@ -227,24 +240,33 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     pObj1 = 0;
     pObj2 = 0;
     
-    gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj1, gfmObject_getNew);
-    gfmGenArr_push(pGame->pObjs);
-    
-    if (type != wall) {
-        gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj2, gfmObject_getNew);
-        gfmGenArr_push(pGame->pObjs);
-        
-        rv = gfmGroup_recycle(&pSpr, pGame->pRender);
-        ASSERT(rv == GFMRV_OK, rv);
-    }
     
     width = 12;
+    height = 4;
+    offX = -10;
+    offY = -28;
+    if (type != wall) {
+        gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj1, gfmObject_getNew);
+        gfmGenArr_push(pGame->pObjs);
+        
+        gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj2, gfmObject_getNew);
+        gfmGenArr_push(pGame->pObjs);
+    }
+    else {
+        width = 32;
+        offX = 0;
+        height = 12;
+        offY = -24;
+    }
+    rv = gfmGroup_recycle(&pSpr, pGame->pRender);
+    ASSERT(rv == GFMRV_OK, rv);
+    
     scanWidth = 64;
     scanHeight = 24;
     if (pSpr) {
         pMob->pSelf = pSpr;
-        rv = gfmSprite_init(pMob->pSelf, 0/*x*/, 0/*y*/, width, 4/*height*/,
-                pGame->pSset32x32, -10/*offX*/, -28/*offY*/, pMob/*pChild*/, type);
+        rv = gfmSprite_init(pMob->pSelf, 0/*x*/, 0/*y*/, width, height,
+                pGame->pSset32x32, offX, offY, pMob/*pChild*/, type);
         ASSERT(rv == GFMRV_OK, rv);
     }
     if (pObj1) {
@@ -257,6 +279,11 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
         pMob->pScan = pObj2;
         rv = gfmObject_init(pMob->pScan, -100/*x*/, -100/*y*/, scanWidth,
                 scanHeight, pMob/*pChild*/, scan);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    
+    if (type == wall) {
+        rv = gfmSprite_setFixed(pSpr);
         ASSERT(rv == GFMRV_OK, rv);
     }
     
@@ -291,8 +318,7 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
         } break;
         case npc: {
         } break;
-        case wall: {
-        } break;
+        case wall: GET_DATA(pWallAnim); break;
         default: ASSERT(0, GFMRV_FUNCTION_NOT_IMPLEMENTED);
     }
 #undef GET_DATA
@@ -461,7 +487,8 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         case npc: {
         } break; // npc
         case wall: {
-        }; // wall
+            move = 0;
+        } break; // wall
         default: ASSERT(0, GFMRV_INTERNAL_ERROR);
     }
     //= ( AI ) =================================================================
@@ -568,14 +595,33 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     }
     
     // Set the animation
+    // Check if hurt
+    if (pMob->isHurt) {
+        rv = gfmSprite_didAnimationJustLoop(pMob->pSelf);
+        ASSERT(rv == GFMRV_TRUE || rv == GFMRV_FALSE, rv);
+        
+        if (rv == GFMRV_TRUE) {
+            if (pMob->health > 0) {
+                pMob->isHurt = 0;
+            }
+            else {
+                // Kill it!
+                pMob->isAlive = 0;
+                
+                rv = gfmSprite_setVelocity(pMob->pSelf, 0, 0);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
+        }
+        // Set to OK, otherwise the ASSERT fail
+        rv = GFMRV_OK;
+    }
     // Check if attacking
-    if (doAttack || pMob->isAttacking) {
+    else if (doAttack || pMob->isAttacking) {
         if (!pMob->isAttacking) {
             pMob->isAttacking = 1;
             rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_ATK);
         }
     }
-    // TODO Check if hurt
     else if (pMob->lastMove & MOVE_WALK) {
         rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_WALK);
     }
@@ -642,16 +688,20 @@ gfmRV mob_postUpdate(mob *pMob, gameCtx *pGame) {
     } // If is attacking (set hitbox)
     
     // Set the scan position
-    rv = gfmObject_getDimensions(&w, &h, pMob->pScan);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmObject_setPosition(pMob->pScan, x - w / 2, y - h / 2);
-    ASSERT(rv == GFMRV_OK, rv);
+    if (pMob->type != wall) {
+        rv = gfmObject_getDimensions(&w, &h, pMob->pScan);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmObject_setPosition(pMob->pScan, x - w / 2, y - h / 2);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
     
     // Add it to the quadtree
-    rv = collide_obj(pMob->pScan, pGame);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = collide_obj(pMob->pAtk, pGame);
-    ASSERT(rv == GFMRV_OK, rv);
+    if (pMob->type != wall) {
+        rv = collide_obj(pMob->pScan, pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = collide_obj(pMob->pAtk, pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
     rv = collide_spr(pMob->pSelf, pGame);
     ASSERT(rv == GFMRV_OK, rv);
     
@@ -706,6 +756,29 @@ gfmRV mob_setOnView(mob *pSelf, mob *pMob) {
         pSelf->plLastPosY += h / 2;
     }
     
+__ret:
+    return rv;
+}
+
+/** pSelf attacks pMob */
+gfmRV mob_attack(mob *pSelf, mob *pMob) {
+    gfmRV rv;
+    
+    if (mob_isVulnerable(pMob) == GFMRV_TRUE) {
+        pMob->health -= pSelf->atkPower;
+        pMob->isHurt = 1;
+        
+        if (pMob->health > 0) {
+            rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_HIT);
+            ASSERT(rv == GFMRV_OK, rv);
+        }
+        else {
+            rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_DEATH);
+            ASSERT(rv == GFMRV_OK, rv);
+        }
+    }
+    
+    rv = GFMRV_OK;
 __ret:
     return rv;
 }

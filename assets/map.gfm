@@ -3,8 +3,12 @@ area collideable -8 0 8 120
 area collideable 1600 0 8 120
 area collideable 0 80 1616 8
 area collideable -8 120 1616 8
-obj shadow 191 107 0 0 [ dist , 160 ] [ level , 1 ] [ subtype , angrySlime ] [ trait , angry ]
-obj shadow 298 103 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
-obj shadow 97 98 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , slime ] [ trait , coward ]
-obj shadow 286 100 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
-obj shadow 283 108 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 321 109 0 0 [ dist , 160 ] [ level , 1 ] [ subtype , angrySlime ] [ trait , angry ]
+obj shadow 432 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 144 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 392 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 408 112 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj wall 96 88 0 0
+obj wall 104 96 0 0
+obj wall 112 104 0 0
+obj wall 120 112 0 0

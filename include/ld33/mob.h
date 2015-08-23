@@ -72,5 +72,8 @@ gfmRV mob_getType(int *pType, mob *pMob);
 
 gfmRV mob_setOnView(mob *pSelf, mob *pMob);
 
+/** pSelf attacks pMob */
+gfmRV mob_attack(mob *pSelf, mob *pMob);
+
 #endif /* __MOB_H__ */
 
