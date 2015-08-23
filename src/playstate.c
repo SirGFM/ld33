@@ -5,10 +5,13 @@
  */
 #include <GFraMe/gfmGenericArray.h>
 #include <GFraMe/gfmGroup.h>
+#include <GFraMe/gfmParser.h>
 
 #include <ld33/playstate.h>
 #include <ld33/main.h>
 #include <ld33/mob.h>
+
+#include <string.h>
 
 gfmGenArr_define(mob);
 
@@ -17,6 +20,8 @@ struct stPlaystate {
     gfmGenArr_var(mob, pMobs);
     /** Leaf particles */
     gfmGroup *pGrp;
+    /** world bounds */
+    gfmObject *pWorld[4];
     /** World's height */
     int height;
     /** State to be set when exiting */
@@ -33,18 +38,141 @@ typedef struct stPlaystate playstate;
  */
 static gfmRV playstate_init(gameCtx *pGame) {
     gfmCamera *pCam;
+    gfmParser *pParser;
     gfmRV rv;
+    int curWorld;
     playstate *pState;
-    mob *pMob;
     
     pState = (playstate*)pGame->pState;
+    pParser = 0;
     
-    // TODO Parse all objects
-    // TODO Parse the world
+    // Parse all objects
+    rv = gfmParser_getNew(&pParser);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmParser_initStatic(pParser, pGame->pCtx, "map.gfm");
+    ASSERT(rv == GFMRV_OK, rv);
     
-    // TODO Get the world's dimensions
-    pState->width = 1000;
+    pState->width = 0;
     pState->height = 120;
+    curWorld = 0;
+    while (rv != GFMRV_PARSER_FINISHED) {
+        char *pType;
+        gfmParserType type;
+        int x, y;
+        
+        rv = gfmParser_parseNext(pParser);
+        ASSERT(rv == GFMRV_OK || rv == GFMRV_PARSER_FINISHED, rv);
+        if (rv == GFMRV_PARSER_FINISHED) {
+            break;
+        }
+        
+        rv = gfmParser_getType(&type, pParser);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmParser_getPos(&x, &y, pParser);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmParser_getIngameType(&pType, pParser);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        if (type == gfmParserType_area) {
+            int height, width;
+            
+            if (strcmp(pType, "collideable") == 0) {
+                gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1,
+                        pState->pWorld[curWorld], gfmObject_getNew);
+                gfmGenArr_push(pGame->pObjs);
+
+                rv = gfmParser_getDimensions(&width, &height, pParser);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                rv = gfmObject_init(pState->pWorld[curWorld], x, y, width,
+                        height, 0/*child*/, collideable/*type*/);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = gfmObject_setFixed(pState->pWorld[curWorld]);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                // Get the world's dimensions
+                if (width > pState->width) {
+                    pState->width = width;
+                }
+                
+                curWorld++;
+            }
+            else {
+                ASSERT(0, GFMRV_INTERNAL_ERROR);
+            }
+        }
+        else if (type == gfmParserType_object) {
+            mob *pMob;
+            
+            // Initialize the mob
+            gfmGenArr_getNextRef(mob, pState->pMobs, 1, pMob, mob_getNew);
+            gfmGenArr_push(pState->pMobs);
+            
+            if (strcmp(pType, "player") == 0) {
+                rv = mob_init(pMob, pGame, player, 1/*level*/);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                rv = mob_setAnimations(pMob, 0/*unused*/);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                rv = mob_setPosition(pMob, x, y);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                pState->pPlayer = pMob;
+            }
+            else if (strcmp(pType, "shadow") == 0) {
+                int num, level, subtype;
+                
+                level = 1;
+                subtype = EN_NONE;
+                
+                rv = gfmParser_getNumProperties(&num, pParser);
+                ASSERT(rv == GFMRV_OK, rv);
+                while (num > 0) {
+                    char *pKey, *pVal;
+                    
+                    rv = gfmParser_getProperty(&pKey, &pVal, pParser, num - 1);
+                    ASSERT(rv == GFMRV_OK, rv);
+                    
+                    if (strcmp(pKey, "level")) {
+                        level = 0;
+                        while (*pVal) {
+                            level = level * 10 + (*pVal) - '0';
+                            pVal++;
+                        }
+                    }
+                    else if (strcmp(pKey, "subtype")) {
+                        if (strcmp(pVal, "slime")) {
+                            subtype = EN_SLIME;
+                        }
+                        else {
+                            ASSERT(0, GFMRV_INTERNAL_ERROR);
+                        }
+                    }
+                    else {
+                        ASSERT(0, GFMRV_INTERNAL_ERROR);
+                    }
+                    
+                    num--;
+                }
+                
+                rv = mob_init(pMob, pGame, shadow, level);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = mob_setPosition(pMob, x, y);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = mob_setAnimations(pMob, subtype);
+                ASSERT(rv == GFMRV_OK, rv);
+            } // if pType == "shadow"
+            else if (strcmp(pType, "wall") == 0) {
+            }
+            else {
+                ASSERT(0, GFMRV_INTERNAL_ERROR);
+            }
+        }
+        else {
+            ASSERT(0, GFMRV_INTERNAL_ERROR);
+        }
+    }
     
     // Set camera's dimensions
     rv = gfm_getCamera(&pCam, pGame->pCtx);
@@ -54,16 +182,6 @@ static gfmRV playstate_init(gameCtx *pGame) {
     rv = gfmCamera_setDeadzone(pCam, 60/*x*/, 0/*y*/, 40/*width*/,
             120/*height*/);
     ASSERT(rv == GFMRV_OK, rv);
-    
-    // Initialize the player
-    gfmGenArr_getNextRef(mob, pState->pMobs, 1, pMob, mob_getNew);
-    gfmGenArr_push(pState->pMobs);
-    
-    rv = mob_init(pMob, pGame, player, 1/*level*/);
-    ASSERT(rv == GFMRV_OK, rv);
-    rv = mob_setAnimations(pMob, 0/*unused*/);
-    ASSERT(rv == GFMRV_OK, rv);
-    pState->pPlayer = pMob;
     
     rv = gfmGroup_getNew(&(pState->pGrp));
     ASSERT(rv == GFMRV_OK, rv);
@@ -85,6 +203,8 @@ static gfmRV playstate_init(gameCtx *pGame) {
     
     rv = GFMRV_OK;
 __ret:
+    gfmParser_free(&pParser);
+    
     return rv;
 }
 
@@ -115,7 +235,14 @@ static gfmRV playstate_update(gameCtx *pGame) {
             pState->height, 6/*maxDepth*/, 10/*maxNodes*/);
     ASSERT(rv == GFMRV_OK, rv);
     
-    // TODO Add world to quadtree?
+    // Add world to quadtree
+    i = 0;
+    while (i < 4) {
+        rv = gfmQuadtree_populateObject(pGame->pQt, pState->pWorld[i]);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        i++;
+    }
     
     i = 0;
     while (i < gfmGenArr_getUsed(pState->pMobs)) {

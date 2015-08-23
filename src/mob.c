@@ -6,6 +6,7 @@
 #include <GFraMe/gfmObject.h>
 #include <GFraMe/gfmSprite.h>
 
+#include <ld33/collision.h>
 #include <ld33/mob.h>
 
 #include <stdlib.h>
@@ -197,6 +198,18 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
         case shadow: {
             atkType = shadow_atk;
             scanType = shadow_scan;
+            
+            width = 12;
+            
+            scanWidth = 64;
+            scanHeight = 24;
+            
+            dashTime = 64;
+            
+            dashHorSpeed = 96;
+            dashVerSpeed = 64;
+            horSpeed = 32;
+            verSpeed = 24;
         } break;
         case wall: {
         } break;
@@ -222,11 +235,7 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
         ASSERT(rv == GFMRV_OK, rv);
     }
     
-    // TODO Load and play animation
-    
     rv = gfmSprite_setFrame(pMob->pSelf, 16/*frame*/);
-    
-    // TODO Set stats from level and type
     
     pMob->type = type;
     pMob->dashTime = dashTime;
@@ -265,14 +274,25 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
     }
 #undef GET_DATA
     
+    // TODO Set stats from level and type
+    
+    
     rv = gfmSprite_addAnimations(pMob->pSelf, pData, len);
 __ret:
     return rv;
 }
 
 gfmRV mob_setPosition(mob *pMob, int x, int y) {
-    // TODO Convert from world->weird space?
-    return gfmSprite_setPosition(pMob->pSelf, x, y);
+    gfmRV rv;
+    int offX, offY;
+    
+    // Convert from world->weird space?
+    rv = gfmSprite_getOffset(&offX, &offY, pMob->pSelf);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    rv = gfmSprite_setPosition(pMob->pSelf, x, y);
+__ret:
+    return rv;
 }
 
 gfmRV mob_update(mob *pMob, gameCtx *pGame) {
@@ -430,12 +450,12 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     rv = gfmObject_setPosition(pMob->pScan, x - w / 2, y - h / 2);
     ASSERT(rv == GFMRV_OK, rv);
     
-    // TODO Add it to the quadtree
-    rv =  gfmQuadtree_populateObject(pGame->pQt, pMob->pScan);
+    // Add it to the quadtree
+    rv = collide_obj(pMob->pScan, pGame);
     ASSERT(rv == GFMRV_OK, rv);
-    rv =  gfmQuadtree_populateObject(pGame->pQt, pMob->pAtk);
+    rv = collide_obj(pMob->pAtk, pGame);
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmQuadtree_populateSprite(pGame->pQt, pMob->pSelf);
+    rv = collide_spr(pMob->pSelf, pGame);
     ASSERT(rv == GFMRV_OK, rv);
     
     // If it's the player, center the camera on it

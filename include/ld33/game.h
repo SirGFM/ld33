@@ -28,6 +28,7 @@
 #define shadow_scan  gfmType_reserved_9
 #define shadow_atk   gfmType_reserved_10
 #define wall         gfmType_reserved_11
+#define collideable  gfmType_reserved_12
 
 /** Create two array types: one for objects and another for sprites */
 gfmGenArr_define(gfmObject);

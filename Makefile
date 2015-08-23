@@ -12,6 +12,7 @@ CC = gcc
 # Define every object required by compilation
 #==============================================================================
   OBJS =                             \
+          $(OBJDIR)/collision.o      \
           $(OBJDIR)/main.o           \
           $(OBJDIR)/playstate.o      \
           $(OBJDIR)/mob.o            

@@ -14,7 +14,8 @@
 typedef struct stMob mob;
 
 enum {
-    EN_SLIME = 0,
+    EN_NONE = 0,
+    EN_SLIME,
     EN_MAX
 };
 
