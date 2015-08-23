@@ -32,7 +32,7 @@ int pPlayerAnim[] = {
 /*                   */ /*len|fps|loop|frames...*/
 /* ANIM_STAND        */    8 , 8 ,  1 , 16,17,16,17,16,18,16,17,
 /* ANIM_WALK         */    4 , 10,  1 , 19,22,19,20,
-/* ANIM_ATK          */    1 , 0 ,  0 , 16,
+/* ANIM_ATK          */    6 , 12,  0 , 17,22,27,27,22,17,
 /* ANIM_HIT          */    8 , 8 ,  0 , 25,26,25,26,25,26,25,26,
 /* ANIM_DASH         */    4 , 12,  1 , 22,24,23,21,
 /* ANIM_DEATH        */    1 , 0 ,  0 , 16,
@@ -551,6 +551,12 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     }
     // Store the last movement
     pMob->lastMove = move;
+    
+    // Only move if not attacking
+    if (pMob->isAttacking) {
+        rv = gfmSprite_setVelocity(pMob->pSelf, 0, 0);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
     
     if (pMob->curDashTimer > 0) {
         int elapsed;
