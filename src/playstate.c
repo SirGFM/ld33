@@ -4,6 +4,7 @@
  * Game's main state, where all the fun should happen
  */
 #include <GFraMe/gfmGenericArray.h>
+#include <GFraMe/gfmGroup.h>
 
 #include <ld33/playstate.h>
 #include <ld33/main.h>
@@ -14,6 +15,8 @@ gfmGenArr_define(mob);
 struct stPlaystate {
     /** Array of objects */
     gfmGenArr_var(mob, pMobs);
+    /** Leaf particles */
+    gfmGroup *pGrp;
     /** World's height */
     int height;
     /** State to be set when exiting */
@@ -59,6 +62,24 @@ static gfmRV playstate_init(gameCtx *pGame) {
     ASSERT(rv == GFMRV_OK, rv);
     pState->pPlayer = pMob;
     
+    rv = gfmGroup_getNew(&(pState->pGrp));
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefSpriteset(pState->pGrp, pGame->pSset4x4);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefDimensions(pState->pGrp, 4 /*width*/, 4 /*height*/,
+        0/*offX*/, 0/*offY*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefVelocity(pState->pGrp, 0/*vx*/, 32/*vy*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefAcceleration(pState->pGrp, 0/*ax*/, 2/*ay*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDeathOnLeave(pState->pGrp, 1/*doDie*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDrawOrder(pState->pGrp, gfmDrawOrder_linear);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_preCache(pState->pGrp, pGame->maxParts, pGame->maxParts);
+    ASSERT(rv == GFMRV_OK, rv);
+    
     rv = GFMRV_OK;
 __ret:
     return rv;
@@ -73,6 +94,7 @@ static void playstate_clean(gameCtx *pGame) {
     pState = (playstate*)pGame->pState;
     
     gfmGenArr_clean(pState->pMobs, mob_free);
+    gfmGroup_free(&(pState->pGrp));
 }
 
 /**
@@ -80,7 +102,7 @@ static void playstate_clean(gameCtx *pGame) {
  */
 static gfmRV playstate_update(gameCtx *pGame) {
     gfmRV rv;
-    int i;
+    int i, num;
     playstate *pState;
     
     pState = (playstate*)pGame->pState;
@@ -104,6 +126,69 @@ static gfmRV playstate_update(gameCtx *pGame) {
         i++;
     }
     
+    // Add a few particles every frame
+    num = 3 + main_getPRNG(pGame) % 7;
+    while (num > 0) {
+        gfmSprite *pSpr;
+        int tile, vx, vy, rng, x, y;
+        
+        rv = gfmGroup_recycle(&pSpr, pState->pGrp);
+        ASSERT(rv == GFMRV_OK || rv == GFMRV_GROUP_MAX_SPRITES, rv);
+        if (rv == GFMRV_GROUP_MAX_SPRITES) {
+            break;
+        }
+        
+        rng = main_getPRNG(pGame);
+        if (rng < 0) rng = -rng;
+        tile = 256 + (rng % 4);
+        
+        rng = main_getPRNG(pGame);
+        if (rng < 0) rng = -rng;
+        vy = 20 + ((rng % 8) - 6);
+        
+        rng = main_getPRNG(pGame);
+        if (rng < 0) rng = -rng;
+        vx = (rng % 8) - 4;
+        
+        rv = gfm_getCameraPosition(&x, &y, pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rng = main_getPRNG(pGame);
+        if (rng < 0) rng = -rng;
+        x += 8 + ((rng % 40) - 2) * 4;
+        y = 8;
+        
+        rv = gfmGroup_setPosition(pState->pGrp, x, y);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmGroup_setFrame(pState->pGrp, tile);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmGroup_setVelocity(pState->pGrp, vx, vy);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        num--;
+    }
+    
+    // Update particles
+    rv = gfmGroup_update(pState->pGrp, pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
+
+static gfmRV playstate_drawBG(gameCtx *pGame, int tile, int iniX, int width) {
+    gfmRV rv;
+    int y;
+    
+    y = 0;
+    while (iniX < 160) {
+        rv = gfm_drawTile(pGame->pCtx, pGame->pSset128x128, iniX, y, tile, 0);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        iniX += width;
+    }
+    
     rv = GFMRV_OK;
 __ret:
     return rv;
@@ -114,12 +199,42 @@ __ret:
  */
 static gfmRV playstate_draw(gameCtx *pGame) {
     gfmRV rv;
-    int i;
+    int i, iniX, height, tile, width, x, y;
     playstate *pState;
     
     pState = (playstate*)pGame->pState;
     
-    // TODO Draw the world?
+    // Get the world position (to do paralax)
+    rv = gfm_getCameraPosition(&x, &y, pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_getBackbufferDimensions(&width, &height, pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    x %= width;
+    
+    // Draw farthest paralax
+    tile = 12;
+    iniX = x / 4;
+    width = 93;
+    rv = playstate_drawBG(pGame, tile, iniX, width);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    // Draw particles
+    rv = gfmGroup_draw(pState->pGrp, pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    // Draw nearest paralax
+    tile = 13;
+    iniX = x / 2;
+    width = 93;
+    rv = playstate_drawBG(pGame, tile, iniX, width);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    // Draw background/floor
+    tile = 14;
+    iniX = x;
+    width = 120;
+    rv = playstate_drawBG(pGame, tile, iniX, width);
+    ASSERT(rv == GFMRV_OK, rv);
     
     i = 0;
     while (i < gfmGenArr_getUsed(pState->pMobs)) {
@@ -132,6 +247,13 @@ static gfmRV playstate_draw(gameCtx *pGame) {
         
         i++;
     }
+    
+    // Draw foreground
+    tile = 15;
+    iniX = x - 20;
+    width = 120;
+    rv = playstate_drawBG(pGame, tile, iniX, width);
+    ASSERT(rv == GFMRV_OK, rv);
     
 #ifdef DEBUG
     rv = gfmQuadtree_drawBounds(pGame->pQt, pGame->pCtx, 0/*colors*/);

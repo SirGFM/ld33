@@ -48,10 +48,14 @@ struct stGameCtx {
     gfmGenArr_var(gfmObject, pObjs);
     /** Array of sprites */
     gfmGenArr_var(gfmSprite, pSprs);
+    /** 4x4 spriteset */
+    gfmSpriteset *pSset4x4;
     /** 8x8 spriteset */
     gfmSpriteset *pSset8x8;
     /** 32x32 spriteset */
     gfmSpriteset *pSset32x32;
+    /** 128x128 spriteset */
+    gfmSpriteset *pSset128x128;
     /** The game's quadtree */
     gfmQuadtreeRoot *pQt;
     /** Pointer to the current state's struct */
@@ -60,6 +64,10 @@ struct stGameCtx {
     stateTypes state;
     /** Whether we should quit from the current state */
     int quitState;
+    /** Maximum number of particles on screen */
+    int maxParts;
+    /** PRNG seed */
+    unsigned int seed;
     /** Input handles */
     int handle_down;
     int handle_left;

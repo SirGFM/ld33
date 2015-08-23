@@ -8,6 +8,17 @@
 #include <ld33/playstate.h>
 
 #include <string.h>
+#include <time.h>
+
+int main_getPRNG(gameCtx *pGame) {
+    long int tmp = pGame->seed;
+    
+    tmp *= 0x19660d;
+    tmp += 0x3c6ef35f;
+    pGame->seed = tmp;
+    
+    return pGame->seed;
+}
 
 /**
  * Update all key's states (and the quit flag)
@@ -58,11 +69,17 @@ static gfmRV loadAssets(gameCtx *pGame) {
     ASSERT(rv == GFMRV_OK, rv);
     
     // Create the texture's spritesets
+    rv = gfm_createSpritesetCached(&(pGame->pSset4x4), pGame->pCtx, texIndex,
+        4/*tileWidth*/, 4/*tileHeight*/);
+    ASSERT(rv == GFMRV_OK, rv);
     rv = gfm_createSpritesetCached(&(pGame->pSset8x8), pGame->pCtx, texIndex,
         8/*tileWidth*/, 8/*tileHeight*/);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfm_createSpritesetCached(&(pGame->pSset32x32), pGame->pCtx, texIndex,
         32/*tileWidth*/, 32/*tileHeight*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_createSpritesetCached(&(pGame->pSset128x128), pGame->pCtx,
+        texIndex, 128/*tileWidth*/, 128/*tileHeight*/);
     ASSERT(rv == GFMRV_OK, rv);
     
     rv = GFMRV_OK;
@@ -86,10 +103,14 @@ int main(int argc, char *argv[]) {
     rv = gfm_initStatic(game.pCtx, "com.gfmgamecorner", "game");
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Intialize the seed
+    game.seed = (unsigned int)time(0);
+    
     // 'Parse' options
     isFullscreen = 0;
     width = 640;
     height = 480;
+    game.maxParts = 2048;
     audSettings = gfmAudio_defQuality;
     while (argc > 1) {
         #define GETARG(opt) strcmp(argv[argc - 1], opt) == 0
@@ -143,6 +164,10 @@ int main(int argc, char *argv[]) {
         rv = gfm_initGameWindow(game.pCtx, bbufWidth, bbufHeight, width, height,
                 0/*dontResize*/);
     }
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    // Set the BG color
+    rv = gfm_setBackground(game.pCtx, 0xff45283c);
     ASSERT(rv == GFMRV_OK, rv);
     
     // Initialize the audio system
