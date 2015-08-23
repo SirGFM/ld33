@@ -104,6 +104,7 @@ struct stMob {
     int dashTime;
     /** For how long we've been dashing */
     int curDashTimer;
+    int isAttacking;
     int nearbyShadowCount;
     int dist;
     int distX;
@@ -337,12 +338,14 @@ gfmRV mob_setDist(mob *pMob, int dist) {
 gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     double vx, vy;
     gfmRV rv;
-    int move, h, w, x, y;
+    int doAttack, move, h, w, x, y;
     
     if (!pMob->isAlive) {
         rv = GFMRV_OK;
         goto __ret;
     }
+    
+    doAttack = 0;
     
     //==========================================================================
     // Check type and 'advance the AI'
@@ -380,20 +383,28 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
             else if (pGame->state_down & gfmInput_pressed) {
                 move |= MOVE_DOWN;
             }
+            // Set player's attack
+            if ((pGame->state_atk & gfmInput_justPressed) ==
+                    gfmInput_justPressed) {
+                doAttack = 1;
+            }
         } break; // player
         case shadow: {
-            if ((pMob->traits & TR_SWARMER) && pMob->nearbyShadowCount >= 3) {
-                // TODO Check distance to player
-                // Make it follow/attack the player
-            } // if swarmer
-            else if (pMob->traits & TR_ANGRY) {
+            if (((pMob->traits & TR_SWARMER) && pMob->nearbyShadowCount >= 3) ||
+                    (pMob->traits & TR_ANGRY)) {
                 int dist;
                 
                 rv = mob_getDist(&dist, pMob, pMob->plLastPosX,
                         pMob->plLastPosY);
                 ASSERT(rv == GFMRV_OK, rv);
                 
-                if (dist <= pMob->dist) {
+                if (pMob->distY > -4 && pMob->distY < 4 && (
+                        (pMob->distX < -8 && pMob->distX > -20) ||
+                        (pMob->distX > 8 && pMob->distX < 20))) {
+                    // Attack if the player is close
+                    doAttack = 1;
+                }
+                if (!doAttack && dist <= pMob->dist) {
                     if (pMob->distX < -2) {
                         move |= MOVE_RIGHT;
                     }
@@ -408,7 +419,8 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
                     }
                 } // if dist
             } // if angry
-            else if (pMob->traits & TR_COWARD) {
+            else if (((pMob->traits & TR_SWARMER) &&
+                    pMob->nearbyShadowCount < 3) || (pMob->traits & TR_COWARD)) {
                 int dist;
                 
                 rv = mob_getDist(&dist, pMob, pMob->plLastPosX,
@@ -487,16 +499,20 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         else {
             vy = 0;
         }
-        rv = gfmSprite_setVelocity(pMob->pSelf, vx, vy);
-        ASSERT(rv == GFMRV_OK, rv);
         
-        if (vx > 0) {
-            rv = gfmSprite_setDirection(pMob->pSelf, 0/*isFlipped*/);
+        if (doAttack == 0) {
+            // Only move if not attacking
+            rv = gfmSprite_setVelocity(pMob->pSelf, vx, vy);
             ASSERT(rv == GFMRV_OK, rv);
-        }
-        else if (vx < 0) {
-            rv = gfmSprite_setDirection(pMob->pSelf, 1/*isFlipped*/);
-            ASSERT(rv == GFMRV_OK, rv);
+        
+            if (vx > 0) {
+                rv = gfmSprite_setDirection(pMob->pSelf, 0/*isFlipped*/);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
+            else if (vx < 0) {
+                rv = gfmSprite_setDirection(pMob->pSelf, 1/*isFlipped*/);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
         }
     }
     // Store the last movement
@@ -512,9 +528,15 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     }
     
     // Set the animation
-    // TODO Check if attacking
+    // Check if attacking
+    if (doAttack || pMob->isAttacking) {
+        if (!pMob->isAttacking) {
+            pMob->isAttacking = 1;
+            rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_ATK);
+        }
+    }
     // TODO Check if hurt
-    if (pMob->lastMove & MOVE_WALK) {
+    else if (pMob->lastMove & MOVE_WALK) {
         rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_WALK);
     }
     else if (pMob->lastMove & MOVE_DASH) {
@@ -537,7 +559,33 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     x += w / 2;
     y += h / 2;
     
-    // TODO If attacking, position the attack hitbox accordingly
+    // If attacking, position the attack hitbox accordingly
+    if (pMob->isAttacking) {
+        rv = gfmSprite_didAnimationJustLoop(pMob->pSelf);
+        ASSERT(rv == GFMRV_TRUE || rv == GFMRV_FALSE, rv);
+
+        if (rv == GFMRV_TRUE) {
+            pMob->isAttacking = 0;
+            rv = gfmObject_setPosition(pMob->pAtk, NEG_INF, NEG_INF);
+            ASSERT(rv == GFMRV_OK, rv);
+        }
+        else {
+            int isFlipped;
+
+            rv = gfmSprite_getDirection(&isFlipped, pMob->pSelf);
+            ASSERT(rv == GFMRV_OK, rv);
+
+            if (isFlipped) {
+                rv = gfmObject_setPosition(pMob->pAtk, x - w / 2 - 8,
+                        y - h / 2);
+            }
+            else {
+                rv = gfmObject_setPosition(pMob->pAtk, x + w / 2,
+                        y - h / 2);
+            }
+            ASSERT(rv == GFMRV_OK, rv);
+        }
+    } // If is attacking (set hitbox)
     
     // Set the scan position
     rv = gfmObject_getDimensions(&w, &h, pMob->pScan);
