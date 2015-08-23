@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     // Start the library
     rv = gfm_getNew(&(game.pCtx));
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfm_initStatic(game.pCtx, "com.gfmgamecorner", "game");
+    rv = gfm_initStatic(game.pCtx, "com.gfmgamecorner", "HerosQuest");
     ASSERT(rv == GFMRV_OK, rv);
     
     // Intialize the seed
