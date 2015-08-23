@@ -123,7 +123,8 @@ int main(int argc, char *argv[]) {
     gfmAudioQuality audSettings;
     gfmInput *pInput;
     gfmRV rv;
-    int bbufWidth, bbufHeight, dps, fps, height, isFullscreen, ups, width;
+    int bbufWidth, bbufHeight, doSkip, dps, fps, height, isFullscreen, ups,
+            width;
     
     // Clean everything before hand
     memset(&game, 0x0, sizeof(gameCtx));
@@ -144,11 +145,15 @@ int main(int argc, char *argv[]) {
     game.maxParts = 2048;
     game.audioFreq = 44100;
     audSettings = gfmAudio_defQuality;
+    doSkip = 0;
     while (argc > 1) {
         #define GETARG(opt) strcmp(argv[argc - 1], opt) == 0
         
         if (GETARG("-full") || GETARG("-f")) {
             isFullscreen = 1;
+        }
+        else if (GETARG("-skip") || GETARG("-s")) {
+            doSkip = 1;
         }
         else if (GETARG("-noaudio") || GETARG("-m")) {
             rv =  gfm_disableAudio(game.pCtx);
@@ -267,11 +272,14 @@ int main(int argc, char *argv[]) {
     
     // Loop...
     game.state = state_introstate;
-    //game.state = state_playstate;
+    if (doSkip) {
+        game.state = state_playstate;
+    }
     while (gfm_didGetQuitFlag(game.pCtx) == GFMRV_FALSE) {
         // Run the current state
         switch (game.state) {
             case state_introstate: rv = introstate_loop(&game); break;
+            case state_blastate: rv = blastate_loop(&game); break;
             case state_playstate: rv = playstate_loop(&game); break;
             default: rv = GFMRV_INTERNAL_ERROR;
         }

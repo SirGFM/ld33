@@ -65,7 +65,7 @@ static gfmRV introstate_init(gameCtx *pGame) {
             (120 - y) / 8 /*h*/, 66/*delay*/, 0/*bindToScreen!*/,
             pGame->pSset8x8, 0/*firstTile*/);
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmText_setTextStatic(pState->pText, "     A GAME BY GFM\n\nMADE IN 48 "
+    rv = gfmText_setTextStatic(pState->pText, "    A GAME BY GFM\n\nMADE IN 48 "
             "HOURS FOR LD#33\n\n\n\nPRESS ANY KEY TO START...\n\nPRESS ESC TO "
             "EXIT", 1/*doCopy*/);
     ASSERT(rv == GFMRV_OK, rv);
@@ -109,7 +109,7 @@ static gfmRV introstate_update(gameCtx *pGame) {
     if (rv == GFMRV_OK) {
         // switch state
         pGame->quitState = 1;
-        pGame->state = state_playstate;
+        pGame->state = state_blastate;
     }
     
     i = 0;

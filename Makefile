@@ -12,6 +12,7 @@ CC = gcc
 # Define every object required by compilation
 #==============================================================================
   OBJS =                             \
+          $(OBJDIR)/blastate.o       \
           $(OBJDIR)/collision.o      \
           $(OBJDIR)/introstate.o     \
           $(OBJDIR)/main.o           \
