@@ -149,24 +149,15 @@ static gfmRV playstate_init(gameCtx *pGame) {
                     else if (CHECK_KEY("subtype")) {
                         if (CHECK_VAL("slime")) subtype = EN_SLIME;
                         else if (CHECK_VAL("angrySlime")) subtype = EN_ANGRYSLIME;
+                        else if (CHECK_VAL("swarmSlime")) subtype = EN_SWARMSLIME;
                         else ASSERT(0, GFMRV_INTERNAL_ERROR);
                     }
                     else if (CHECK_KEY("trait")) {
-                        if (CHECK_VAL("coward")) {
-                            traits |= TR_COWARD;
-                        }
-                        else if (CHECK_VAL("neutral")) {
-                            traits |= TR_NEUTRAL;
-                        }
-                        else if (CHECK_VAL("angry")) {
-                            traits |= TR_ANGRY;
-                        }
-                        else if (CHECK_VAL("swarmer")) {
-                            traits |= TR_SWARMER;
-                        }
-                        else {
-                            ASSERT(0, GFMRV_INTERNAL_ERROR);
-                        }
+                        if (CHECK_VAL("coward")) traits |= TR_COWARD;
+                        else if (CHECK_VAL("neutral")) traits |= TR_NEUTRAL;
+                        else if (CHECK_VAL("angry")) traits |= TR_ANGRY;
+                        else if (CHECK_VAL("swarmer")) traits |= TR_SWARMER;
+                        else ASSERT(0, GFMRV_INTERNAL_ERROR);
                     }
                     else if (CHECK_KEY("dist")) {
                         dist = 0;

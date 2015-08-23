@@ -17,6 +17,7 @@ enum {
     EN_NONE = 0,
     EN_SLIME,
     EN_ANGRYSLIME,
+    EN_SWARMSLIME,
     EN_MAX
 };
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="200" height="16" tilewidth="8" tileheight="8" nextobjectid="9">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="200" height="16" tilewidth="8" tileheight="8" nextobjectid="13">
  <tileset firstgid="1" name="atlas" tilewidth="256" tileheight="128">
   <image source="atlas.bmp" trans="ff00ff" width="512" height="512"/>
  </tileset>
@@ -67,8 +67,28 @@
 </data>
  </layer>
  <objectgroup name="Object Layer 1">
-  <object id="1" type="player" gid="25" x="16" y="106"/>
-  <object id="2" name="l1 coward slime" type="shadow" gid="2147483705" x="116.333" y="96.6667">
+  <object id="1" name="player" type="player" gid="25" x="16" y="106"/>
+  <object id="3" name="oob" type="collideable" x="-8" y="0" width="8" height="120"/>
+  <object id="4" name="oob" type="collideable" x="1600" y="0" width="8" height="120"/>
+  <object id="5" name="oob" type="collideable" x="0" y="80" width="1616" height="8"/>
+  <object id="6" name="oob" type="collideable" x="-8" y="120" width="1616" height="8"/>
+  <object id="8" name="l1 angry slime" type="shadow" gid="2147483713" x="191.333" y="107.333">
+   <properties>
+    <property name="dist" value="160"/>
+    <property name="level" value="1"/>
+    <property name="subtype" value="angrySlime"/>
+    <property name="trait" value="angry"/>
+   </properties>
+  </object>
+  <object id="9" name="l1 swarm slime" type="shadow" gid="2147483721" x="298" y="103.667">
+   <properties>
+    <property name="dist" value="80"/>
+    <property name="level" value="1"/>
+    <property name="subtype" value="swarmSlime"/>
+    <property name="trait" value="swarmer"/>
+   </properties>
+  </object>
+  <object id="10" name="l1 coward slime" type="shadow" gid="2147483705" x="97" y="98.6667">
    <properties>
     <property name="dist" value="80"/>
     <property name="level" value="1"/>
@@ -76,16 +96,20 @@
     <property name="trait" value="coward"/>
    </properties>
   </object>
-  <object id="3" name="oob" type="collideable" x="-8" y="0" width="8" height="120"/>
-  <object id="4" name="oob" type="collideable" x="1600" y="0" width="8" height="120"/>
-  <object id="5" name="oob" type="collideable" x="0" y="80" width="1616" height="8"/>
-  <object id="6" name="oob" type="collideable" x="-8" y="120" width="1616" height="8"/>
-  <object id="8" name="l1 angry slime" type="shadow" gid="2147483713" x="169.333" y="109">
+  <object id="11" name="l1 swarm slime" type="shadow" gid="2147483721" x="286.5" y="100.25">
    <properties>
-    <property name="dist" value="160"/>
+    <property name="dist" value="80"/>
     <property name="level" value="1"/>
-    <property name="subtype" value="angrySlime"/>
-    <property name="trait" value="angry"/>
+    <property name="subtype" value="swarmSlime"/>
+    <property name="trait" value="swarmer"/>
+   </properties>
+  </object>
+  <object id="12" name="l1 swarm slime" type="shadow" gid="2147483721" x="283.5" y="108.5">
+   <properties>
+    <property name="dist" value="80"/>
+    <property name="level" value="1"/>
+    <property name="subtype" value="swarmSlime"/>
+    <property name="trait" value="swarmer"/>
    </properties>
   </object>
  </objectgroup>

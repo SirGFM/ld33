@@ -32,7 +32,7 @@ int pPlayerAnim[] = {
 /* ANIM_STAND        */    8 , 8 ,  1 , 16,17,16,17,16,18,16,17,
 /* ANIM_WALK         */    4 , 10,  1 , 19,22,19,20,
 /* ANIM_ATK          */    1 , 0 ,  0 , 16,
-/* ANIM_HIT          */    1 , 0 ,  0 , 16,
+/* ANIM_HIT          */    8 , 8 ,  0 , 25,26,25,26,25,26,25,26,
 /* ANIM_DASH         */    4 , 12,  1 , 22,24,23,21,
 /* ANIM_DEATH        */    1 , 0 ,  0 , 16,
 /* ANIM_PL_TRANSFORM */    1 , 0 ,  0 , 16,
@@ -60,6 +60,18 @@ int pAngrySlimeAnim[] = {
 /* ANIM_HIT   */    8 , 8 ,  0 , 60,61,60,61,60,61,60,61,
 /* ANIM_DASH  */    1 , 0 ,  0 , 56,
 /* ANIM_DEATH */    4 , 12,  0 , 60,61,62,63,
+/* ANIM_MAX   */    0
+};
+
+/** Angry slime animation */
+int pSwarmSlimeAnim[] = {
+/*            */ /*len|fps|loop|frames...*/
+/* ANIM_STAND */    2 , 8 ,  1 , 64,65,
+/* ANIM_WALK  */    4 , 8 ,  1 , 64,66,67,66,
+/* ANIM_ATK   */    4 , 12,  0 , 66,67,67,66,
+/* ANIM_HIT   */    8 , 8 ,  0 , 68,69,68,69,68,69,68,69,
+/* ANIM_DASH  */    1 , 0 ,  0 , 64,
+/* ANIM_DEATH */    4 , 12,  0 , 68,69,70,71,
 /* ANIM_MAX   */    0
 };
 
@@ -272,6 +284,7 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
             switch (subtype) {
                 case EN_SLIME: GET_DATA(pSlimeAnim); break;
                 case EN_ANGRYSLIME: GET_DATA(pAngrySlimeAnim); break;
+                case EN_SWARMSLIME: GET_DATA(pSwarmSlimeAnim); break;
                 default: ASSERT(0, GFMRV_FUNCTION_NOT_IMPLEMENTED);
             }
         } break;
@@ -548,6 +561,9 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     }
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Reset those, so they can be fully calculated until next frame
+    pMob->nearbyShadowCount = 0;
+    
     rv = GFMRV_OK;
 __ret:
     return rv;
@@ -600,8 +616,6 @@ gfmRV mob_postUpdate(mob *pMob, gameCtx *pGame) {
     rv = gfmObject_setPosition(pMob->pScan, x - w / 2, y - h / 2);
     ASSERT(rv == GFMRV_OK, rv);
     
-    // Reset those, so they can be fully calculated until next frame
-    pMob->nearbyShadowCount = 0;
     // Add it to the quadtree
     rv = collide_obj(pMob->pScan, pGame);
     ASSERT(rv == GFMRV_OK, rv);
