@@ -220,8 +220,9 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     if (type != wall) {
         gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1, pObj2, gfmObject_getNew);
         gfmGenArr_push(pGame->pObjs);
-        gfmGenArr_getNextRef(gfmSprite, pGame->pSprs, 1, pSpr, gfmSprite_getNew);
-        gfmGenArr_push(pGame->pSprs);
+        
+        rv = gfmGroup_recycle(&pSpr, pGame->pRender);
+        ASSERT(rv == GFMRV_OK, rv);
     }
     
     width = 12;
@@ -338,7 +339,7 @@ gfmRV mob_setDist(mob *pMob, int dist) {
 gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     double vx, vy;
     gfmRV rv;
-    int doAttack, move, h, w, x, y;
+    int doAttack, move;
     
     if (!pMob->isAlive) {
         rv = GFMRV_OK;
@@ -547,8 +548,14 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     }
     ASSERT(rv == GFMRV_OK, rv);
     
-    rv = gfmSprite_update(pMob->pSelf, pGame->pCtx);
-    ASSERT(rv == GFMRV_OK, rv);
+    rv = GFMRV_OK;
+__ret:
+    return rv;
+}
+    
+gfmRV mob_postUpdate(mob *pMob, gameCtx *pGame) {
+    gfmRV rv;
+    int h, w, x, y;
     
     // Get the current position
     rv = gfmSprite_getPosition(&x, &y, pMob->pSelf);

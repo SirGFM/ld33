@@ -11,6 +11,7 @@
 #include <GFraMe/gfmAssert.h>
 #include <GFraMe/gfmError.h>
 #include <GFraMe/gfmGenericArray.h>
+#include <GFraMe/gfmGroup.h>
 #include <GFraMe/gfmObject.h>
 #include <GFraMe/gfmQuadtree.h>
 #include <GFraMe/gfmSprite.h>
@@ -28,7 +29,6 @@
 
 /** Create two array types: one for objects and another for sprites */
 gfmGenArr_define(gfmObject);
-gfmGenArr_define(gfmSprite);
 
 enum enStateTypes {
     state_none = 0,
@@ -43,8 +43,8 @@ struct stGameCtx {
     gfmCtx *pCtx;
     /** Array of objects */
     gfmGenArr_var(gfmObject, pObjs);
-    /** Array of sprites */
-    gfmGenArr_var(gfmSprite, pSprs);
+    /** Group for rendering everything */
+    gfmGroup *pRender;
     /** 4x4 spriteset */
     gfmSpriteset *pSset4x4;
     /** 8x8 spriteset */

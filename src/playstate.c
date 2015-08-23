@@ -290,6 +290,21 @@ static gfmRV playstate_update(gameCtx *pGame) {
         i++;
     }
     
+    rv = gfmGroup_update(pGame->pRender, pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    i = 0;
+    while (i < gfmGenArr_getUsed(pState->pMobs)) {
+        mob *pMob;
+        
+        pMob = gfmGenArr_getObject(pState->pMobs, i);
+        
+        rv = mob_postUpdate(pMob, pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        i++;
+    }
+    
     // Add a few particles every frame
     num = 5 + main_getPRNG(pGame) % 10;
     while (num > 0) {
@@ -366,7 +381,7 @@ __ret:
  */
 static gfmRV playstate_draw(gameCtx *pGame) {
     gfmRV rv;
-    int i, iniX, height, tile, width, x, y;
+    int iniX, height, tile, width, x, y;
     playstate *pState;
     
     pState = (playstate*)pGame->pState;
@@ -403,6 +418,9 @@ static gfmRV playstate_draw(gameCtx *pGame) {
     rv = playstate_drawBG(pGame, tile, iniX, width);
     ASSERT(rv == GFMRV_OK, rv);
     
+    rv = gfmGroup_draw(pGame->pRender, pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    /*
     i = 0;
     while (i < gfmGenArr_getUsed(pState->pMobs)) {
         mob *pMob;
@@ -414,6 +432,7 @@ static gfmRV playstate_draw(gameCtx *pGame) {
         
         i++;
     }
+    */
     
     // Draw foreground
     tile = 7;

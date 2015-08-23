@@ -61,6 +61,8 @@ gfmRV mob_setDist(mob *pMob, int dist);
  */
 gfmRV mob_update(mob *pMob, gameCtx *pGame);
 
+gfmRV mob_postUpdate(mob *pMob, gameCtx *pGame);
+
 gfmRV mob_draw(mob *pMob, gameCtx *pGame);
 
 gfmRV mob_isVulnerable(mob *pMob);

@@ -228,6 +228,23 @@ int main(int argc, char *argv[]) {
     rv = gfmQuadtree_getNew(&(game.pQt));
     ASSERT(rv == GFMRV_OK, rv);
     
+    // Initialize the rendering group
+    rv = gfmGroup_getNew(&(game.pRender));
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefSpriteset(game.pRender, game.pSset32x32);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDefDimensions(game.pRender, 32/*width*/, 32/*height*/,
+        0/*offX*/, 0/*offY*/);
+    rv = gfmGroup_setDeathOnLeave(game.pRender, 0/*dontDie*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDeathOnTime(game.pRender, 0/*ttl*/);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_setDrawOrder(game.pRender, gfmDrawOrder_topFirst);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmGroup_preCache(game.pRender, 12, 0);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    
     // Loop...
     game.state = state_playstate;
     while (gfm_didGetQuitFlag(game.pCtx) == GFMRV_FALSE) {
@@ -242,8 +259,8 @@ int main(int argc, char *argv[]) {
     rv = GFMRV_OK;
 __ret:
     // Clean all resources
+    gfmGroup_free(&(game.pRender));
     gfmGenArr_clean(game.pObjs, gfmObject_free);
-    gfmGenArr_clean(game.pSprs, gfmSprite_free);
     gfmQuadtree_free(&(game.pQt));
     gfm_free(&(game.pCtx));
     
