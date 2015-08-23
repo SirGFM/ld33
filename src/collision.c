@@ -58,15 +58,14 @@ gfmRV doCollide(gameCtx *pGame) {
         
         if (type1 == collideable && (type2 == player || type2 == shadow)) {
             rv = collide_mobXWall(pObj2, pObj1);
-            ASSERT(rv == GFMRV_OK, rv);
         }
         else if (type2 == collideable && (type1 == player || type1 == shadow)) {
             rv = collide_mobXWall(pObj1, pObj2);
-            ASSERT(rv == GFMRV_OK, rv);
         }
         else {
             // TODO Collide atk vs hitbox and hitbox vs scan
         }
+        ASSERT(rv == GFMRV_OK, rv);
         
         rv = gfmQuadtree_continue(pGame->pQt);
         ASSERT(rv == GFMRV_QUADTREE_OVERLAPED || rv == GFMRV_QUADTREE_DONE,

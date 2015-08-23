@@ -73,10 +73,11 @@ static gfmRV playstate_init(gameCtx *pGame) {
         rv = gfmParser_getIngameType(&pType, pParser);
         ASSERT(rv == GFMRV_OK, rv);
         
+#define CHECK_TYPE(str) strcmp(pType, str) == 0
         if (type == gfmParserType_area) {
             int height, width;
             
-            if (strcmp(pType, "collideable") == 0) {
+            if (CHECK_TYPE("collideable")) {
                 gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1,
                         pState->pWorld[curWorld], gfmObject_getNew);
                 gfmGenArr_push(pGame->pObjs);
@@ -96,11 +97,11 @@ static gfmRV playstate_init(gameCtx *pGame) {
                 }
                 
                 curWorld++;
-            }
+            } // if type == collideable
             else {
                 ASSERT(0, GFMRV_INTERNAL_ERROR);
             }
-        }
+        } // if type == area
         else if (type == gfmParserType_object) {
             mob *pMob;
             
@@ -108,7 +109,7 @@ static gfmRV playstate_init(gameCtx *pGame) {
             gfmGenArr_getNextRef(mob, pState->pMobs, 1, pMob, mob_getNew);
             gfmGenArr_push(pState->pMobs);
             
-            if (strcmp(pType, "player") == 0) {
+            if (CHECK_TYPE("player")) {
                 rv = mob_init(pMob, pGame, player, 1/*level*/);
                 ASSERT(rv == GFMRV_OK, rv);
                 
@@ -119,12 +120,13 @@ static gfmRV playstate_init(gameCtx *pGame) {
                 ASSERT(rv == GFMRV_OK, rv);
                 
                 pState->pPlayer = pMob;
-            }
-            else if (strcmp(pType, "shadow") == 0) {
-                int num, level, subtype;
+            } // if type == player
+            else if (CHECK_TYPE("shadow")) {
+                int num, level, subtype, traits;
                 
                 level = 1;
                 subtype = EN_NONE;
+                traits = TR_NONE;
                 
                 rv = gfmParser_getNumProperties(&num, pParser);
                 ASSERT(rv == GFMRV_OK, rv);
@@ -134,16 +136,32 @@ static gfmRV playstate_init(gameCtx *pGame) {
                     rv = gfmParser_getProperty(&pKey, &pVal, pParser, num - 1);
                     ASSERT(rv == GFMRV_OK, rv);
                     
-                    if (strcmp(pKey, "level")) {
+#define CHECK_KEY(str) strcmp(pKey, str) == 0
+#define CHECK_VAL(str) strcmp(pVal, str) == 0
+                    if (CHECK_KEY("level")) {
                         level = 0;
                         while (*pVal) {
                             level = level * 10 + (*pVal) - '0';
                             pVal++;
                         }
                     }
-                    else if (strcmp(pKey, "subtype")) {
-                        if (strcmp(pVal, "slime")) {
+                    else if (CHECK_KEY("subtype")) {
+                        if (CHECK_VAL("slime")) {
                             subtype = EN_SLIME;
+                        }
+                        else {
+                            ASSERT(0, GFMRV_INTERNAL_ERROR);
+                        }
+                    }
+                    else if (CHECK_KEY("trait")) {
+                        if (CHECK_VAL("coward")) {
+                            traits |= TR_COWARD;
+                        }
+                        else if (CHECK_VAL("neutral")) {
+                            traits |= TR_NEUTRAL;
+                        }
+                        else if (CHECK_VAL("angry")) {
+                            traits |= TR_ANGRY;
                         }
                         else {
                             ASSERT(0, GFMRV_INTERNAL_ERROR);
@@ -152,18 +170,21 @@ static gfmRV playstate_init(gameCtx *pGame) {
                     else {
                         ASSERT(0, GFMRV_INTERNAL_ERROR);
                     }
-                    
+#undef CHECK_VAL
+#undef CHECK_KEY
                     num--;
-                }
+                } // while num < numProps
                 
                 rv = mob_init(pMob, pGame, shadow, level);
                 ASSERT(rv == GFMRV_OK, rv);
                 rv = mob_setPosition(pMob, x, y);
                 ASSERT(rv == GFMRV_OK, rv);
+                rv = mob_setTraits(pMob, traits);
+                ASSERT(rv == GFMRV_OK, rv);
                 rv = mob_setAnimations(pMob, subtype);
                 ASSERT(rv == GFMRV_OK, rv);
             } // if pType == "shadow"
-            else if (strcmp(pType, "wall") == 0) {
+            else if (CHECK_TYPE("wall")) {
             }
             else {
                 ASSERT(0, GFMRV_INTERNAL_ERROR);
@@ -172,6 +193,7 @@ static gfmRV playstate_init(gameCtx *pGame) {
         else {
             ASSERT(0, GFMRV_INTERNAL_ERROR);
         }
+#undef CHECK_TYPE
     }
     
     // Set camera's dimensions

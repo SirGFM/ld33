@@ -19,16 +19,12 @@
 
 /** Types... */
 #define player       gfmType_reserved_2
-#define player_scan  gfmType_reserved_3
-#define player_atk   gfmType_reserved_4
-#define npc          gfmType_reserved_5
-#define npc_scan     gfmType_reserved_6
-#define npc_atk      gfmType_reserved_7
-#define shadow       gfmType_reserved_8
-#define shadow_scan  gfmType_reserved_9
-#define shadow_atk   gfmType_reserved_10
-#define wall         gfmType_reserved_11
-#define collideable  gfmType_reserved_12
+#define npc          gfmType_reserved_3
+#define shadow       gfmType_reserved_4
+#define scan         gfmType_reserved_5
+#define atk          gfmType_reserved_6
+#define wall         gfmType_reserved_7
+#define collideable  gfmType_reserved_8
 
 /** Create two array types: one for objects and another for sprites */
 gfmGenArr_define(gfmObject);

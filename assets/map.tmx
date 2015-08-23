@@ -68,10 +68,11 @@
  </layer>
  <objectgroup name="Object Layer 1">
   <object id="1" type="player" gid="25" x="16" y="106"/>
-  <object id="2" name="slime" type="shadow" gid="2147483705" x="112" y="104">
+  <object id="2" name="l1 angry slime" type="shadow" gid="2147483705" x="112" y="104">
    <properties>
     <property name="level" value="1"/>
     <property name="subtype" value="slime"/>
+    <property name="trait" value="angry"/>
    </properties>
   </object>
   <object id="3" name="oob" type="collideable" x="-8" y="0" width="8" height="120"/>

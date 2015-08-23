@@ -82,6 +82,8 @@ struct stMob {
     int atkPower;
     /** (Redundant) The mob's type */
     int type;
+    /** Traits */
+    int traits;
     /** Previous movement */
     int lastMove;
     /** For how long we can dash */
@@ -149,8 +151,7 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     gfmRV rv;
     gfmSprite *pSpr;
     gfmObject *pObj1, *pObj2;
-    int atkType, dashTime, scanType, scanWidth, scanHeight, width;
-    double dashHorSpeed, dashVerSpeed, horSpeed, verSpeed;
+    int scanWidth, scanHeight, width;
     
     ASSERT(pMob, GFMRV_ARGUMENTS_BAD);
     ASSERT(pGame, GFMRV_ARGUMENTS_BAD);
@@ -173,49 +174,9 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
         gfmGenArr_push(pGame->pSprs);
     }
     
-    // Initialize the mob according to its type
-    switch (type) {
-        case player: {
-            atkType = player_atk;
-            scanType = player_scan;
-            
-            width = 12;
-            
-            scanWidth = 64;
-            scanHeight = 24;
-            
-            dashTime = 96;
-            
-            dashHorSpeed = 128;
-            dashVerSpeed = 96;
-            horSpeed = 48;
-            verSpeed = 32;
-        } break;
-        case npc: {
-            atkType = npc_atk;
-            scanType = npc_scan;
-        } break;
-        case shadow: {
-            atkType = shadow_atk;
-            scanType = shadow_scan;
-            
-            width = 12;
-            
-            scanWidth = 64;
-            scanHeight = 24;
-            
-            dashTime = 64;
-            
-            dashHorSpeed = 96;
-            dashVerSpeed = 64;
-            horSpeed = 32;
-            verSpeed = 24;
-        } break;
-        case wall: {
-        } break;
-        default: ASSERT(0, GFMRV_INTERNAL_ERROR);
-    }
-    
+    width = 12;
+    scanWidth = 64;
+    scanHeight = 24;
     if (pSpr) {
         pMob->pSelf = pSpr;
         rv = gfmSprite_init(pMob->pSelf, 0/*x*/, 0/*y*/, width, 4/*height*/,
@@ -225,26 +186,20 @@ gfmRV mob_init(mob *pMob, gameCtx *pGame, int type, int level) {
     if (pObj1) {
         pMob->pAtk = pObj1;
         rv = gfmObject_init(pMob->pAtk, -100/*x*/, -100/*y*/, (32 - width) / 2,
-                4/*height*/, pMob/*pChild*/, atkType);
+                4/*height*/, pMob/*pChild*/, atk);
         ASSERT(rv == GFMRV_OK, rv);
     }
     if (pObj2) {
         pMob->pScan = pObj2;
         rv = gfmObject_init(pMob->pScan, -100/*x*/, -100/*y*/, scanWidth,
-                scanHeight, pMob/*pChild*/, scanType);
+                scanHeight, pMob/*pChild*/, scan);
         ASSERT(rv == GFMRV_OK, rv);
     }
     
-    rv = gfmSprite_setFrame(pMob->pSelf, 16/*frame*/);
-    
     pMob->type = type;
-    pMob->dashTime = dashTime;
-    pMob->dashHorSpeed = dashHorSpeed;
-    pMob->dashVerSpeed = dashVerSpeed;
-    pMob->horSpeed = horSpeed;
-    pMob->verSpeed = verSpeed;
+    pMob->isAlive = 1;
     
-    rv = GFMRV_OK;
+    rv = gfmSprite_setFrame(pMob->pSelf, 16/*frame*/);
 __ret:
     return rv;
 }
@@ -274,8 +229,30 @@ gfmRV mob_setAnimations(mob *pMob, int subtype) {
     }
 #undef GET_DATA
     
-    // TODO Set stats from level and type
-    
+    // Set stats from level and type
+    switch (pMob->type) {
+        case player: {
+            pMob->dashTime = 96;
+            
+            pMob->dashHorSpeed = 128;
+            pMob->dashVerSpeed = 96;
+            pMob->horSpeed = 48;
+            pMob->verSpeed = 32;
+        } break;
+        case npc: {
+        } break;
+        case shadow: {
+            pMob->dashTime = 64;
+            
+            pMob->dashHorSpeed = 96;
+            pMob->dashVerSpeed = 64;
+            pMob->horSpeed = 32;
+            pMob->verSpeed = 24;
+        } break;
+        case wall: {
+        } break;
+        default: ASSERT(0, GFMRV_INTERNAL_ERROR);
+    }
     
     rv = gfmSprite_addAnimations(pMob->pSelf, pData, len);
 __ret:
@@ -295,10 +272,20 @@ __ret:
     return rv;
 }
 
+gfmRV mob_setTraits(mob *pMob, int traits) {
+    pMob->traits = traits;
+    return GFMRV_OK;
+}
+
 gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     double vx, vy;
     gfmRV rv;
     int move, h, w, x, y;
+    
+    if (!pMob->isAlive) {
+        rv = GFMRV_OK;
+        goto __ret;
+    }
     
     // Check type and 'advance the AI'
     move = MOVE_STAND;
@@ -482,5 +469,11 @@ gfmRV mob_isVulnerable(mob *pMob) {
         return GFMRV_TRUE;
     }
     return GFMRV_FALSE;
+}
+
+gfmRV mob_getType(int *pType, mob *pMob) {
+    *pType = pMob->type;
+    
+    return GFMRV_OK;
 }
 

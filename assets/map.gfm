@@ -1,5 +1,5 @@
 obj player 16 106 0 0
-obj shadow 112 104 0 0 [ level , 1 ] [ subtype , slime ]
+obj shadow 112 104 0 0 [ level , 1 ] [ subtype , slime ] [ trait , angry ]
 area collideable -8 0 8 120
 area collideable 1600 0 8 120
 area collideable 0 80 1616 8
