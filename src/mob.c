@@ -7,6 +7,7 @@
 #include <GFraMe/gfmSprite.h>
 
 #include <ld33/collision.h>
+#include <ld33/main.h>
 #include <ld33/mob.h>
 
 #include <stdlib.h>
@@ -515,6 +516,25 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
         }
         
         if (doAttack == 0) {
+            if (pMob->type != player) {
+                if (vx != 0) {
+                    int rng;
+                    
+                    rng = main_getPRNG(pGame);
+                    if (rng < 0) rng = -rng;
+                    
+                    vx += rng % 10 - 5;
+                }
+                if (vy != 0) {
+                    int rng;
+                    
+                    rng = main_getPRNG(pGame);
+                    if (rng < 0) rng = -rng;
+                    
+                    vy += rng % 10 - 5;
+                }
+            }
+            
             // Only move if not attacking
             rv = gfmSprite_setVelocity(pMob->pSelf, vx, vy);
             ASSERT(rv == GFMRV_OK, rv);
@@ -572,6 +592,11 @@ __ret:
 gfmRV mob_postUpdate(mob *pMob, gameCtx *pGame) {
     gfmRV rv;
     int h, w, x, y;
+    
+    if (!pMob->isAlive) {
+        rv = GFMRV_OK;
+        goto __ret;
+    }
     
     // Get the current position
     rv = gfmSprite_getPosition(&x, &y, pMob->pSelf);
