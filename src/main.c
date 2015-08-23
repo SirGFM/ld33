@@ -78,8 +78,8 @@ static gfmRV loadAssets(gameCtx *pGame) {
     rv = gfm_createSpritesetCached(&(pGame->pSset32x32), pGame->pCtx, texIndex,
         32/*tileWidth*/, 32/*tileHeight*/);
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfm_createSpritesetCached(&(pGame->pSset128x128), pGame->pCtx,
-        texIndex, 128/*tileWidth*/, 128/*tileHeight*/);
+    rv = gfm_createSpritesetCached(&(pGame->pSset256x128), pGame->pCtx,
+        texIndex, 256/*tileWidth*/, 128/*tileHeight*/);
     ASSERT(rv == GFMRV_OK, rv);
     
     rv = GFMRV_OK;

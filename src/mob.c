@@ -438,6 +438,16 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
     rv = gfmQuadtree_populateSprite(pGame->pQt, pMob->pSelf);
     ASSERT(rv == GFMRV_OK, rv);
     
+    // If it's the player, center the camera on it
+    if (pMob->type == player) {
+        gfmCamera *pCam;
+        
+        rv = gfm_getCamera(&pCam, pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        rv = gfmCamera_centerAtPoint(pCam, x, y);
+        ASSERT(rv == GFMRV_CAMERA_MOVED || rv ==GFMRV_CAMERA_DIDNT_MOVE, rv);
+    }
+    
     rv = GFMRV_OK;
 __ret:
     return rv;

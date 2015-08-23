@@ -43,13 +43,16 @@ static gfmRV playstate_init(gameCtx *pGame) {
     // TODO Parse the world
     
     // TODO Get the world's dimensions
-    pState->width = 160;
+    pState->width = 1000;
     pState->height = 120;
     
     // Set camera's dimensions
     rv = gfm_getCamera(&pCam, pGame->pCtx);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmCamera_setWorldDimensions(pCam, pState->width, pState->height);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfmCamera_setDeadzone(pCam, 60/*x*/, 0/*y*/, 40/*width*/,
+            120/*height*/);
     ASSERT(rv == GFMRV_OK, rv);
     
     // Initialize the player
@@ -177,16 +180,19 @@ __ret:
     return rv;
 }
 
-static gfmRV playstate_drawBG(gameCtx *pGame, int tile, int iniX, int width) {
+static gfmRV playstate_drawBG(gameCtx *pGame, int tile, int camX, int width) {
     gfmRV rv;
-    int y;
+    int x, y;
+    
+    camX %= width;
     
     y = 0;
-    while (iniX < 160) {
-        rv = gfm_drawTile(pGame->pCtx, pGame->pSset128x128, iniX, y, tile, 0);
+    x = -width;
+    while (x - camX < 160) {
+        rv = gfm_drawTile(pGame->pCtx, pGame->pSset256x128, x - camX, y, tile, 0);
         ASSERT(rv == GFMRV_OK, rv);
         
-        iniX += width;
+        x += width;
     }
     
     rv = GFMRV_OK;
@@ -212,9 +218,9 @@ static gfmRV playstate_draw(gameCtx *pGame) {
     x %= width;
     
     // Draw farthest paralax
-    tile = 12;
+    tile = 4;
     iniX = x / 4;
-    width = 93;
+    width = 160;
     rv = playstate_drawBG(pGame, tile, iniX, width);
     ASSERT(rv == GFMRV_OK, rv);
     
@@ -223,16 +229,16 @@ static gfmRV playstate_draw(gameCtx *pGame) {
     ASSERT(rv == GFMRV_OK, rv);
     
     // Draw nearest paralax
-    tile = 13;
+    tile = 5;
     iniX = x / 2;
-    width = 93;
+    width = 160;
     rv = playstate_drawBG(pGame, tile, iniX, width);
     ASSERT(rv == GFMRV_OK, rv);
     
     // Draw background/floor
-    tile = 14;
+    tile = 6;
     iniX = x;
-    width = 120;
+    width = 160;
     rv = playstate_drawBG(pGame, tile, iniX, width);
     ASSERT(rv == GFMRV_OK, rv);
     
@@ -249,9 +255,9 @@ static gfmRV playstate_draw(gameCtx *pGame) {
     }
     
     // Draw foreground
-    tile = 15;
-    iniX = x - 20;
-    width = 120;
+    tile = 7;
+    iniX = x;
+    width = 160;
     rv = playstate_drawBG(pGame, tile, iniX, width);
     ASSERT(rv == GFMRV_OK, rv);
     
@@ -277,6 +283,9 @@ gfmRV playstate_loop(gameCtx *pGame) {
     
     rv = playstate_init(pGame);
     ASSERT(rv == GFMRV_OK, rv);
+    
+    //rv = gfm_recordGif(pGame->pCtx, 10000/*ms*/, "anim.gif", 8, 0);
+    //ASSERT(rv == GFMRV_OK, rv);
     
     // Loop indefinitely....
     while (gfm_didGetQuitFlag(pGame->pCtx) == GFMRV_FALSE &&

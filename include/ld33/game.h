@@ -54,8 +54,8 @@ struct stGameCtx {
     gfmSpriteset *pSset8x8;
     /** 32x32 spriteset */
     gfmSpriteset *pSset32x32;
-    /** 128x128 spriteset */
-    gfmSpriteset *pSset128x128;
+    /** 256x128 spriteset */
+    gfmSpriteset *pSset256x128;
     /** The game's quadtree */
     gfmQuadtreeRoot *pQt;
     /** Pointer to the current state's struct */
