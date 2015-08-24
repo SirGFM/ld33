@@ -21,7 +21,7 @@ struct stPlaystate {
     /** Leaf particles */
     gfmGroup *pGrp;
     /** world bounds */
-    gfmObject *pWorld[4];
+    gfmObject *pWorld[5];
     /** World's height */
     int height;
     /** State to be set when exiting */
@@ -81,7 +81,23 @@ static gfmRV playstate_init(gameCtx *pGame) {
         if (type == gfmParserType_area) {
             int height, width;
             
-            if (CHECK_TYPE("collideable")) {
+            if (CHECK_TYPE("win")) {
+                gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1,
+                        pState->pWorld[curWorld], gfmObject_getNew);
+                gfmGenArr_push(pGame->pObjs);
+
+                rv = gfmParser_getDimensions(&width, &height, pParser);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                rv = gfmObject_init(pState->pWorld[curWorld], x, y, width,
+                        height, 0/*child*/, win/*type*/);
+                ASSERT(rv == GFMRV_OK, rv);
+                rv = gfmObject_setFixed(pState->pWorld[curWorld]);
+                ASSERT(rv == GFMRV_OK, rv);
+                
+                curWorld++;
+            }
+            else if (CHECK_TYPE("collideable")) {
                 gfmGenArr_getNextRef(gfmObject, pGame->pObjs, 1,
                         pState->pWorld[curWorld], gfmObject_getNew);
                 gfmGenArr_push(pGame->pObjs);
@@ -272,7 +288,7 @@ static gfmRV playstate_update(gameCtx *pGame) {
     
     // Add world to quadtree
     i = 0;
-    while (i < 4) {
+    while (i < 5) {
         rv = gfmQuadtree_populateObject(pGame->pQt, pState->pWorld[i]);
         ASSERT(rv == GFMRV_OK, rv);
         
@@ -506,5 +522,17 @@ __ret:
     playstate_clean(pGame);
     
     return rv;
+}
+
+gfmRV playstate_setWin(gameCtx *pGame) {
+    playstate *pState;
+    
+    pState = (playstate*)pGame->pState;
+    
+    // TODO DO SOMETHING
+    pGame->quitState = 1;
+    pGame->state = 123;
+    
+    return GFMRV_OK;
 }
 

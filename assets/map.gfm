@@ -3,12 +3,42 @@ area collideable -8 0 8 120
 area collideable 1600 0 8 120
 area collideable 0 80 1616 8
 area collideable -8 120 1616 8
-obj shadow 321 109 0 0 [ dist , 160 ] [ level , 1 ] [ subtype , angrySlime ] [ trait , angry ]
-obj shadow 432 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
-obj shadow 144 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , slime ] [ trait , coward ]
-obj shadow 392 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
-obj shadow 408 112 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
-obj wall 96 88 0 0
-obj wall 104 96 0 0
-obj wall 112 104 0 0
-obj wall 120 112 0 0
+obj wall 432 88 0 0
+obj wall 440 96 0 0
+obj wall 448 104 0 0
+obj wall 456 112 0 0
+obj wall 728 88 0 0
+obj wall 736 96 0 0
+obj wall 744 104 0 0
+obj wall 752 112 0 0
+obj wall 1056 88 0 0
+obj wall 1064 96 0 0
+obj wall 1072 104 0 0
+obj wall 1080 112 0 0
+obj wall 1456 88 0 0
+obj wall 1464 96 0 0
+obj wall 1472 104 0 0
+obj wall 1480 112 0 0
+obj wall 320 88 0 0
+obj wall 328 96 0 0
+obj wall 336 104 0 0
+obj wall 344 112 0 0
+obj shadow 112 112 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 168 104 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 384 104 0 0 [ dist , 160 ] [ level , 1 ] [ subtype , angrySlime ] [ trait , angry ]
+obj shadow 552 96 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 546 102 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 560 100 0 0 [ dist , 80 ] [ level , 1 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 784 104 0 0 [ dist , 80 ] [ level , 2 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 808 112 0 0 [ dist , 80 ] [ level , 2 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 832 104 0 0 [ dist , 160 ] [ level , 2 ] [ subtype , angrySlime ] [ trait , angry ]
+obj shadow 976 104 0 0 [ dist , 80 ] [ level , 2 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 1112 96 0 0 [ dist , 80 ] [ level , 3 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 1136 104 0 0 [ dist , 80 ] [ level , 3 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 1118 112 0 0 [ dist , 80 ] [ level , 3 ] [ subtype , slime ] [ trait , coward ]
+obj shadow 1224 104 0 0 [ dist , 160 ] [ level , 3 ] [ subtype , angrySlime ] [ trait , angry ]
+obj shadow 1192 96 0 0 [ dist , 80 ] [ level , 3 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 1320 112 0 0 [ dist , 80 ] [ level , 3 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 1344 104 0 0 [ dist , 80 ] [ level , 3 ] [ subtype , swarmSlime ] [ trait , swarmer ]
+obj shadow 1400 104 0 0 [ dist , 160 ] [ level , 3 ] [ subtype , angrySlime ] [ trait , angry ]
+area win 1512 64 88 64

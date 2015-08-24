@@ -26,6 +26,7 @@
 #define atk          gfmType_reserved_6
 #define wall         gfmType_reserved_7
 #define collideable  gfmType_reserved_8
+#define win          gfmType_reserved_9
 
 /** Create two array types: one for objects and another for sprites */
 gfmGenArr_define(gfmObject);

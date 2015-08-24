@@ -8,6 +8,8 @@
 
 #include <ld33/game.h>
 
+gfmRV playstate_setWin(gameCtx *pGame);
+
 /**
  * Initialize the playstate and loop it
  */

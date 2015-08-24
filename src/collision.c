@@ -3,6 +3,7 @@
  */
 #include <ld33/collision.h>
 #include <ld33/mob.h>
+#include <ld33/playstate.h>
 
 static gfmRV collide_atkXMob(gfmObject *pAtk, mob *pMob) {
     gfmRV rv;
@@ -103,7 +104,17 @@ static gfmRV doCollide(gameCtx *pGame) {
             ASSERT(rv == GFMRV_OK, rv);
         }
         
-        if ((type1 == wall || type1 == collideable) &&
+        if (type1 == win && type2 == player) {
+            if (pGame->state == state_playstate) {
+                rv = playstate_setWin(pGame);
+            }
+        }
+        else if (type2 == win && type1 == player) {
+            if (pGame->state == state_playstate) {
+                rv = playstate_setWin(pGame);
+            }
+        }
+        else if ((type1 == wall || type1 == collideable) &&
                 (type2 == player || type2 == shadow)) {
             rv = collide_mobXWall(pObj2, pObj1);
         }
