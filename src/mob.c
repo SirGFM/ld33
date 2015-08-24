@@ -35,7 +35,7 @@ int pPlayerAnim[] = {
 /* ANIM_ATK          */    6 , 12,  0 , 17,22,27,27,22,17,
 /* ANIM_HIT          */    8 , 8 ,  0 , 25,26,25,26,25,26,25,26,
 /* ANIM_DASH         */    4 , 12,  1 , 22,24,23,21,
-/* ANIM_DEATH        */    1 , 0 ,  0 , 16,
+/* ANIM_DEATH        */    4 , 8 ,  0 , 25,26,28,29,
 /* ANIM_PL_TRANSFORM */    1 , 0 ,  0 , 16,
 /* ANIM_PL_MAX       */    0
 };
