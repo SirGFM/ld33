@@ -109,7 +109,12 @@ static gfmRV introstate_update(gameCtx *pGame) {
     if (rv == GFMRV_OK) {
         // switch state
         pGame->quitState = 1;
-        pGame->state = state_blastate;
+        if (pGame->didWin || pGame->didLose) {
+            pGame->state = state_playstate;
+        }
+        else {
+            pGame->state = state_blastate;
+        }
     }
     
     i = 0;

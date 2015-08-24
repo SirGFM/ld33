@@ -16,6 +16,7 @@
 struct stIntrostate {
     gfmSprite *pSpr;
     gfmText *pText;
+    int time;
 };
 typedef struct stIntrostate blastate;
 
@@ -50,10 +51,36 @@ static gfmRV blastate_init(gameCtx *pGame) {
     rv = gfmText_getNew(&(pState->pText));
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmText_init(pState->pText, 0/*x*/, y, 160 / 8/*w*/,
-            4 /*h*/, 75/*delay*/, 0/*bindToScreen!*/,
+            4 /*h*/, 100/*delay*/, 0/*bindToScreen!*/,
             pGame->pSset8x8, 0/*firstTile*/);
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmText_setTextStatic(pState->pText,
+    
+    if (pGame->didWin) {
+        rv = gfmSprite_setFrame(pState->pSpr, 25);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = gfmText_setTextStatic(pState->pText,
+            "I DID COMPLETE MY MISSION AND KILLED ALL MONTERS, BUT...\n\n"
+            "THEY WERE MERE SLIMES... WERE THEY REALLY A THREAT?\n\n"
+            "WHY DID I FOLLOW THAT MISSION EVEN KNOWING THAT THEY WOULDN'T"
+            "CAUSE ANY HARM?\n\n"
+            "...\n\n"
+            "BAD ENDING......?", 1/*doCopy*/);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    else if (pGame->didLose) {
+        rv = gfmSprite_setFrame(pState->pSpr, 25);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = gfmText_setTextStatic(pState->pText,
+            "IN THE END, I COULDN'T FULFILL MY MISSION...\n\n"
+            "AT LEAST, THOSE SMALL CRITTERS WEREN'T SLAIN FOR NAUGHT...\n\n"
+            "\n\n"
+            "GOOD ENDING......?", 1/*doCopy*/);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    else {
+        rv = gfmText_setTextStatic(pState->pText,
             "I'M THE LOCAL VILLAGE'S HERO\n\n"
             "WHENEVER THERE'S A LOCAL THREAT, I'M CALLED TO PUT AN END TO IT "
             "AND SAVE US ALL\n\n"
@@ -63,7 +90,8 @@ static gfmRV blastate_init(gameCtx *pGame) {
             "OR... SO I WAS TOLD...\n\n"
             "ANYWAY, I MUST OBEY! LET'S GO!\n\n"
             ".........", 1/*doCopy*/);
-    ASSERT(rv == GFMRV_OK, rv);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
     
     rv = GFMRV_OK;
 __ret:
@@ -95,9 +123,18 @@ static gfmRV blastate_update(gameCtx *pGame) {
     rv = gfmText_didFinish(pState->pText);
     ASSERT(rv == GFMRV_TRUE || rv == GFMRV_FALSE, rv);
     if (rv == GFMRV_TRUE) {
-        // switch state
-        pGame->quitState = 1;
-        pGame->state = state_playstate;
+        int elapsed;
+        
+        rv = gfm_getElapsedTime(&elapsed, pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        pState->time += elapsed;
+        
+        if (pState->time >= 1250) {
+            // switch state
+            pGame->quitState = 1;
+            pGame->state = state_playstate;
+        }
     }
     
     rv = gfmText_update(pState->pText, pGame->pCtx);

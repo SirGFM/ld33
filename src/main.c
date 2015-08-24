@@ -3,6 +3,7 @@
  * 
  * The game's entry point
  */
+#include <ld33/blastate.h>
 #include <ld33/game.h>
 #include <ld33/introstate.h>
 #include <ld33/main.h>

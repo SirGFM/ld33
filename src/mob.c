@@ -825,3 +825,10 @@ __ret:
     return rv;
 }
 
+gfmRV mob_isAlive(mob *pMob) {
+    if (pMob->isAlive) {
+        return GFMRV_TRUE;
+    }
+    return GFMRV_FALSE;
+}
+

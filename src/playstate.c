@@ -46,6 +46,9 @@ static gfmRV playstate_init(gameCtx *pGame) {
     pState = (playstate*)pGame->pState;
     pParser = 0;
     
+    pGame->didWin = 0;
+    pGame->didLose = 0;
+    
     // Initialize the rendering group
     rv = main_cleanRenderGroup(pGame);
     ASSERT(rv == GFMRV_OK, rv);
@@ -280,6 +283,12 @@ static gfmRV playstate_update(gameCtx *pGame) {
     playstate *pState;
     
     pState = (playstate*)pGame->pState;
+    
+    if (mob_isAlive(pState->pPlayer) == GFMRV_FALSE) {
+        pGame->didLose = 1;
+        pGame->quitState = 1;
+        pGame->state = state_blastate;
+    }
     
     // Initialize the qt
     rv = gfmQuadtree_initRoot(pGame->pQt, 0/*x*/, 0/*y*/, pState->width,
@@ -525,13 +534,9 @@ __ret:
 }
 
 gfmRV playstate_setWin(gameCtx *pGame) {
-    playstate *pState;
-    
-    pState = (playstate*)pGame->pState;
-    
-    // TODO DO SOMETHING
+    pGame->didWin = 1;
     pGame->quitState = 1;
-    pGame->state = 123;
+    pGame->state = state_blastate;
     
     return GFMRV_OK;
 }

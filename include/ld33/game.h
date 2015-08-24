@@ -68,6 +68,8 @@ struct stGameCtx {
     int maxParts;
     /** PRNG seed */
     unsigned int seed;
+    int didLose;
+    int didWin;
     /** Input handles */
     int handle_down;
     int handle_left;
