@@ -93,6 +93,12 @@ struct stGameCtx {
     /** Audios */
     int audioFreq;
     int song;
+    int expl;
+    int wall_hit;
+    int slime_hit;
+    int slime_death;
+    int pl_hit;
+    int pl_death;
 };
 typedef struct stGameCtx gameCtx;
 

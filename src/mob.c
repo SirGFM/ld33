@@ -798,7 +798,7 @@ __ret:
 }
 
 /** pSelf attacks pMob */
-gfmRV mob_attack(mob *pSelf, mob *pMob) {
+gfmRV mob_attack(mob *pSelf, mob *pMob, gameCtx *pGame) {
     gfmRV rv;
     
     if (mob_isVulnerable(pMob) == GFMRV_TRUE) {
@@ -813,10 +813,36 @@ gfmRV mob_attack(mob *pSelf, mob *pMob) {
             
             rv = gfmSprite_setVelocity(pMob->pSelf, 0, 0);
             ASSERT(rv == GFMRV_OK, rv);
+            
+            if (pMob->type == wall) {
+                rv = gfm_playAudio(0, pGame->pCtx, pGame->wall_hit, 0.6);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
+            else if (pMob->type == shadow) {
+                rv = gfm_playAudio(0, pGame->pCtx, pGame->slime_hit, 0.6);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
+            else if (pMob->type == player) {
+                rv = gfm_playAudio(0, pGame->pCtx, pGame->pl_hit, 0.6);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
         }
         else {
             rv = gfmSprite_playAnimation(pMob->pSelf, ANIM_DEATH);
             ASSERT(rv == GFMRV_OK, rv);
+            
+            if (pMob->type == wall) {
+                rv = gfm_playAudio(0, pGame->pCtx, pGame->expl, 0.6);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
+            else if (pMob->type == shadow) {
+                rv = gfm_playAudio(0, pGame->pCtx, pGame->slime_death, 0.6);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
+            else if (pMob->type == player) {
+                rv = gfm_playAudio(0, pGame->pCtx, pGame->pl_death, 0.6);
+                ASSERT(rv == GFMRV_OK, rv);
+            }
         }
     }
     

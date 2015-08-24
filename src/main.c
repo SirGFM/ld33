@@ -114,6 +114,20 @@ static gfmRV loadAssets(gameCtx *pGame) {
     rv = gfm_setRepeat(pGame->pCtx, pGame->song, 6 * pGame->audioFreq );
     ASSERT(rv == GFMRV_OK, rv);
     
+    rv = gfm_loadAudio(&(pGame->expl), pGame->pCtx, "expl.wav", 8);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_loadAudio(&(pGame->wall_hit), pGame->pCtx, "wall_hit.wav", 12);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_loadAudio(&(pGame->slime_death), pGame->pCtx, "slime_death.wav", 15);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_loadAudio(&(pGame->slime_hit), pGame->pCtx, "slime_hit.wav", 13);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_loadAudio(&(pGame->pl_hit), pGame->pCtx, "player_hit.wav", 14);
+    ASSERT(rv == GFMRV_OK, rv);
+    rv = gfm_loadAudio(&(pGame->pl_death), pGame->pCtx, "player_death.wav", 16);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    
     rv = GFMRV_OK;
 __ret:
     return rv;

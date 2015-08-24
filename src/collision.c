@@ -5,7 +5,7 @@
 #include <ld33/mob.h>
 #include <ld33/playstate.h>
 
-static gfmRV collide_atkXMob(gfmObject *pAtk, mob *pMob) {
+static gfmRV collide_atkXMob(gfmObject *pAtk, mob *pMob, gameCtx *pGame) {
     gfmRV rv;
     int type;
     mob *pSelf;
@@ -17,7 +17,7 @@ static gfmRV collide_atkXMob(gfmObject *pAtk, mob *pMob) {
         goto __ret;
     }
     
-    rv = mob_attack(pSelf, pMob);
+    rv = mob_attack(pSelf, pMob, pGame);
     ASSERT(rv == GFMRV_OK, rv);
     
     rv = GFMRV_OK;
@@ -130,11 +130,11 @@ static gfmRV doCollide(gameCtx *pGame) {
         }
         else if (type1 == atk && (type2 == player || type2 == shadow ||
                 type2 == wall)) {
-            rv = collide_atkXMob(pObj1, pMob2);
+            rv = collide_atkXMob(pObj1, pMob2, pGame);
         }
         else if (type2 == atk && (type1 == player || type1 == shadow ||
                 type1 == wall)) {
-            rv = collide_atkXMob(pObj2, pMob1);
+            rv = collide_atkXMob(pObj2, pMob1, pGame);
         }
         else {
             // Collision between mob's hitboxes, do nothing!

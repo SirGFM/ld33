@@ -73,7 +73,7 @@ gfmRV mob_getType(int *pType, mob *pMob);
 gfmRV mob_setOnView(mob *pSelf, mob *pMob);
 
 /** pSelf attacks pMob */
-gfmRV mob_attack(mob *pSelf, mob *pMob);
+gfmRV mob_attack(mob *pSelf, mob *pMob, gameCtx *pGame);
 
 gfmRV mob_isAlive(mob *pMob);
 
