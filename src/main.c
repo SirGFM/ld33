@@ -16,7 +16,7 @@
 #ifdef EMSCRIPT
 #define DESPAIR_LOG(msg, ...) printf(msg, ##__VA_ARGS__)
 #else
-#define DESPAIR_LOG(msg, ...)
+#define DESPAIR_LOG(msg, ...) do {} while(0)
 #endif
 
 #ifdef EMSCRIPT
@@ -26,8 +26,12 @@ static gameCtx game;
 
 void main_loop(void *pArg) {
     gameCtx *pGame;
+    gfmRV rv;
     
     pGame = (gameCtx*)pArg;
+    
+    rv = gfm_issueFrame(pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
     
     // Run the current state
     switch (pGame->state) {
@@ -35,6 +39,13 @@ void main_loop(void *pArg) {
         case state_blastate:   blastate_loop(pGame);   break;
         case state_playstate:  playstate_loop(pGame);  break;
         default: {}
+    }
+    
+    rv = gfm_waitFrame(pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+__ret:
+    if (rv != GFMRV_OK) {
+        printf("Got error %i\n", rv);
     }
 }
 #endif
@@ -179,12 +190,10 @@ int main(int argc, char *argv[]) {
     // Start the library
     DESPAIR_LOG("Getting game's context...");
     rv = gfm_getNew(&(game.pCtx));
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     DESPAIR_LOG("Initializing framework...");
     rv = gfm_initStatic(game.pCtx, "com.gfmgamecorner", "HerosQuest");
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
@@ -213,7 +222,6 @@ int main(int argc, char *argv[]) {
         }
         else if (GETARG("-noaudio") || GETARG("-m")) {
             rv =  gfm_disableAudio(game.pCtx);
-            DESPAIR_LOG(" rv=%i", rv);
             ASSERT(rv == GFMRV_OK, rv);
         }
         else if (GETARG("-badaudio") || GETARG("-l")) {
@@ -253,7 +261,6 @@ int main(int argc, char *argv[]) {
 #ifdef EMSCRIPT
     DESPAIR_LOG("Disabling audio...");
     rv =  gfm_disableAudio(game.pCtx);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK!\n");
 #endif
@@ -270,21 +277,18 @@ int main(int argc, char *argv[]) {
         rv = gfm_initGameWindow(game.pCtx, bbufWidth, bbufHeight, width, height,
                 0/*dontResize*/);
     }
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK!\n");
     
     // Set the BG color
     DESPAIR_LOG("Setting background color...");
     rv = gfm_setBackground(game.pCtx, 0xff45283c);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
     // Initialize the audio system
     DESPAIR_LOG("Initializing audio...");
     rv = gfm_initAudio(game.pCtx, audSettings);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
@@ -293,7 +297,6 @@ int main(int argc, char *argv[]) {
     rv = gfm_getInput(&pInput, game.pCtx);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmInput_setMultiDelay(pInput, 150/*ms*/);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
@@ -301,13 +304,16 @@ int main(int argc, char *argv[]) {
 #define BIND_NEW_KEY(handle, key) \
     rv = gfm_addVirtualKey(&(game.handle_##handle), game.pCtx); \
     ASSERT(rv == GFMRV_OK, rv); \
+    DESPAIR_LOG("  Added virtual key "#handle"\n"); \
     rv = gfm_bindInput(game.pCtx, game.handle_##handle, key); \
-    ASSERT(rv == GFMRV_OK, rv)
+    ASSERT(rv == GFMRV_OK, rv); \
+    DESPAIR_LOG("  Bound vkey "#handle" to "#key"\n")
 #define BIND_KEY(handle, key) \
     rv = gfm_bindInput(game.pCtx, game.handle_##handle, key); \
-    ASSERT(rv == GFMRV_OK, rv)
+    ASSERT(rv == GFMRV_OK, rv); \
+    DESPAIR_LOG("  Bound vkey "#handle" to "#key"\n")
     
-    DESPAIR_LOG("Binding keys...");
+    DESPAIR_LOG("Binding keys...\n");
     BIND_NEW_KEY(down, gfmKey_down);
     BIND_KEY(down, gfmKey_s);
     BIND_NEW_KEY(left, gfmKey_left);
@@ -319,7 +325,7 @@ int main(int argc, char *argv[]) {
     BIND_NEW_KEY(atk, gfmKey_x);
     BIND_KEY(atk, gfmKey_space);
     BIND_NEW_KEY(quit, gfmKey_esc);
-    DESPAIR_LOG(" OK\n");
+    DESPAIR_LOG("OK\n");
     
 #undef BIND_NEW_KEY
 #undef BIND_KEY
@@ -327,7 +333,6 @@ int main(int argc, char *argv[]) {
     // Load assets
     DESPAIR_LOG("Loading assets...");
     rv = loadAssets(&game);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
@@ -341,7 +346,6 @@ int main(int argc, char *argv[]) {
 #endif
     DESPAIR_LOG("Setting update and draw rate...");
     rv = gfm_setStateFrameRate(game.pCtx, ups, dps);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
@@ -353,28 +357,24 @@ int main(int argc, char *argv[]) {
 #endif
     DESPAIR_LOG("Setting timer's callback");
     rv = gfm_setFPS(game.pCtx, fps);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
     // Initialize the FPS counter (only visible in debug mode, though)
     DESPAIR_LOG("Initializing FPS counter...");
     rv = gfm_initFPSCounter(game.pCtx, game.pSset8x8, 0/*firstTile*/);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
     // Initialize the quadtree
     DESPAIR_LOG("Initializing quadtree...");
     rv = gfmQuadtree_getNew(&(game.pQt));
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
     // Play the song
     DESPAIR_LOG("Playing song...");
     rv = gfm_playAudio(0, game.pCtx, game.song, 0.8);
-    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
 __ret:
 #ifdef EMSCRIPT
     // This avoids clearing resources before the game starts running
-    DESPAIR_LOG("Done with initialization!");
+    DESPAIR_LOG("Done with initialization!\n");
     return rv;
 #else
     // Clean all resources

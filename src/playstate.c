@@ -534,6 +534,7 @@ __ret:
     if (pGame->quitState || rv != GFMRV_OK) {
         playstate_clean(pGame);
         pGame->isInit = 0;
+        pGame->quitState = 0;
     }
     
     return rv;
