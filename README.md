@@ -34,3 +34,5 @@ $ make RELEASE=yes
 ```
 
 Since the default target is the debug one, you've gotta set it to release mode manually.
+
++TODO+ Write about symlink to ${EMSCRIPTEN}/system/include/GFraMe

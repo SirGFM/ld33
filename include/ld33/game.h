@@ -99,6 +99,10 @@ struct stGameCtx {
     int slime_death;
     int pl_hit;
     int pl_death;
+#ifdef EMSCRIPT
+    /** Whether this state has been initialized in a previous loop */
+    int isInit;
+#endif
 };
 typedef struct stGameCtx gameCtx;
 

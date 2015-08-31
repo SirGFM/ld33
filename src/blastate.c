@@ -20,6 +20,10 @@ struct stIntrostate {
 };
 typedef struct stIntrostate blastate;
 
+#ifdef EMSCRIPT
+static blastate bsCtx;
+#endif
+
 /**
  * Initialize everything
  */
@@ -168,6 +172,58 @@ __ret:
  * Initialize the blastate and loop it
  */
 gfmRV blastate_loop(gameCtx *pGame) {
+#ifdef EMSCRIPT
+    gfmRV rv;
+    
+    // Initialize the state, if needed
+    if (!pGame->isInit) {
+        memset(&bsCtx, 0x0, sizeof(blastate));
+        pGame->pState = &bsCtx;
+        
+        rv = blastate_init(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        pGame->isInit = 1;
+    }
+    
+    // Run this loop
+    
+    // Sleep until there's a event
+    rv = gfm_handleEvents(pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    while (gfm_isUpdating(pGame->pCtx) == GFMRV_TRUE) {
+        rv = gfm_fpsCounterUpdateBegin(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = main_getKeyStates(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = blastate_update(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = gfm_fpsCounterUpdateEnd(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    
+    while (gfm_isDrawing(pGame->pCtx) == GFMRV_TRUE) {
+        rv = gfm_drawBegin(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = blastate_draw(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = gfm_drawEnd(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    
+__ret:
+    if (pGame->quitState || rv != GFMRV_OK) {
+        blastate_clean(pGame);
+        pGame->isInit = 0;
+    }
+    return rv;
+#else
     gfmRV rv;
     blastate isCtx;
     
@@ -215,5 +271,6 @@ __ret:
     blastate_clean(pGame);
     
     return rv;
+#endif
 }
 

@@ -19,6 +19,10 @@ struct stIntrostate {
 };
 typedef struct stIntrostate introstate;
 
+#ifdef EMSCRIPT
+static introstate isCtx;
+#endif
+
 /**
  * Initialize everything
  */
@@ -170,6 +174,59 @@ __ret:
  * Initialize the introstate and loop it
  */
 gfmRV introstate_loop(gameCtx *pGame) {
+#ifdef EMSCRIPT
+    gfmRV rv;
+    
+    // Initialize the state, if needed
+    if (!pGame->isInit) {
+        memset(&isCtx, 0x0, sizeof(introstate));
+        pGame->pState = &isCtx;
+        
+        rv = introstate_init(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        pGame->isInit = 1;
+    }
+    
+    // Run this loop
+    
+    // Sleep until there's a event
+    rv = gfm_handleEvents(pGame->pCtx);
+    ASSERT(rv == GFMRV_OK, rv);
+    
+    while (gfm_isUpdating(pGame->pCtx) == GFMRV_TRUE) {
+        rv = gfm_fpsCounterUpdateBegin(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = main_getKeyStates(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = introstate_update(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = gfm_fpsCounterUpdateEnd(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    
+    while (gfm_isDrawing(pGame->pCtx) == GFMRV_TRUE) {
+        rv = gfm_drawBegin(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = introstate_draw(pGame);
+        ASSERT(rv == GFMRV_OK, rv);
+        
+        rv = gfm_drawEnd(pGame->pCtx);
+        ASSERT(rv == GFMRV_OK, rv);
+    }
+    
+__ret:
+    if (pGame->quitState || rv != GFMRV_OK) {
+        introstate_clean(pGame);
+        pGame->isInit = 0;
+    }
+    
+    return rv;
+#else
     gfmRV rv;
     introstate isCtx;
     
@@ -217,5 +274,6 @@ __ret:
     introstate_clean(pGame);
     
     return rv;
+#endif
 }
 

@@ -12,6 +12,33 @@
 #include <string.h>
 #include <time.h>
 
+
+#ifdef EMSCRIPT
+#define DESPAIR_LOG(msg, ...) printf(msg, ##__VA_ARGS__)
+#else
+#define DESPAIR_LOG(msg, ...)
+#endif
+
+#ifdef EMSCRIPT
+#include <emscripten.h>
+
+static gameCtx game;
+
+void main_loop(void *pArg) {
+    gameCtx *pGame;
+    
+    pGame = (gameCtx*)pArg;
+    
+    // Run the current state
+    switch (pGame->state) {
+        case state_introstate: introstate_loop(pGame); break;
+        case state_blastate:   blastate_loop(pGame);   break;
+        case state_playstate:  playstate_loop(pGame);  break;
+        default: {}
+    }
+}
+#endif
+
 gfmRV main_cleanRenderGroup(gameCtx *pGame) {
     gfmRV rv;
     
@@ -134,24 +161,36 @@ __ret:
 }
 
 int main(int argc, char *argv[]) {
+#ifdef EMSCRIPT
+#else
     gameCtx game;
+#endif
     gfmAudioQuality audSettings;
     gfmInput *pInput;
     gfmRV rv;
     int bbufWidth, bbufHeight, doSkip, dps, fps, height, isFullscreen, ups,
             width;
     
+    DESPAIR_LOG("Hero's Quest - by GFM\n");
+    
     // Clean everything before hand
     memset(&game, 0x0, sizeof(gameCtx));
     
     // Start the library
+    DESPAIR_LOG("Getting game's context...");
     rv = gfm_getNew(&(game.pCtx));
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
+    DESPAIR_LOG("Initializing framework...");
     rv = gfm_initStatic(game.pCtx, "com.gfmgamecorner", "HerosQuest");
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Intialize the seed
     game.seed = (unsigned int)time(0);
+    DESPAIR_LOG("Set game seed!\n");
     
     // 'Parse' options
     isFullscreen = 0;
@@ -161,6 +200,8 @@ int main(int argc, char *argv[]) {
     game.audioFreq = 44100;
     audSettings = gfmAudio_defQuality;
     doSkip = 0;
+    
+#ifndef EMSCRIPT
     while (argc > 1) {
         #define GETARG(opt) strcmp(argv[argc - 1], opt) == 0
         
@@ -172,6 +213,7 @@ int main(int argc, char *argv[]) {
         }
         else if (GETARG("-noaudio") || GETARG("-m")) {
             rv =  gfm_disableAudio(game.pCtx);
+            DESPAIR_LOG(" rv=%i", rv);
             ASSERT(rv == GFMRV_OK, rv);
         }
         else if (GETARG("-badaudio") || GETARG("-l")) {
@@ -205,10 +247,21 @@ int main(int argc, char *argv[]) {
         #undef GETARG
         argc--;
     }
+#endif
+    
+    // TODO Remove this
+#ifdef EMSCRIPT
+    DESPAIR_LOG("Disabling audio...");
+    rv =  gfm_disableAudio(game.pCtx);
+    DESPAIR_LOG(" rv=%i", rv);
+    ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK!\n");
+#endif
     
     // Create the window
     bbufWidth = 160;
     bbufHeight = 120;
+    DESPAIR_LOG("Initializing game window...");
     if (isFullscreen) {
         rv = gfm_initGameFullScreen(game.pCtx, bbufWidth, bbufHeight,
                 0/*defRes*/, 0/*dontResize*/);
@@ -217,21 +270,32 @@ int main(int argc, char *argv[]) {
         rv = gfm_initGameWindow(game.pCtx, bbufWidth, bbufHeight, width, height,
                 0/*dontResize*/);
     }
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK!\n");
     
     // Set the BG color
+    DESPAIR_LOG("Setting background color...");
     rv = gfm_setBackground(game.pCtx, 0xff45283c);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Initialize the audio system
+    DESPAIR_LOG("Initializing audio...");
     rv = gfm_initAudio(game.pCtx, audSettings);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Shorten the double press window
+    DESPAIR_LOG("Setting double input delay...");
     rv = gfm_getInput(&pInput, game.pCtx);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmInput_setMultiDelay(pInput, 150/*ms*/);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Bind keys
 #define BIND_NEW_KEY(handle, key) \
@@ -243,6 +307,7 @@ int main(int argc, char *argv[]) {
     rv = gfm_bindInput(game.pCtx, game.handle_##handle, key); \
     ASSERT(rv == GFMRV_OK, rv)
     
+    DESPAIR_LOG("Binding keys...");
     BIND_NEW_KEY(down, gfmKey_down);
     BIND_KEY(down, gfmKey_s);
     BIND_NEW_KEY(left, gfmKey_left);
@@ -254,42 +319,75 @@ int main(int argc, char *argv[]) {
     BIND_NEW_KEY(atk, gfmKey_x);
     BIND_KEY(atk, gfmKey_space);
     BIND_NEW_KEY(quit, gfmKey_esc);
+    DESPAIR_LOG(" OK\n");
     
 #undef BIND_NEW_KEY
 #undef BIND_KEY
     
     // Load assets
+    DESPAIR_LOG("Loading assets...");
     rv = loadAssets(&game);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Set FPS
+#ifdef EMSCRIPT
+    ups = 30;
+    dps = 30;
+#else
     ups = 60;
     dps = 60;
+#endif
+    DESPAIR_LOG("Setting update and draw rate...");
     rv = gfm_setStateFrameRate(game.pCtx, ups, dps);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Set the timer resolution, in frames per seconds
+#ifdef EMSCRIPT
+    fps = 30;
+#else
     fps = 60;
+#endif
+    DESPAIR_LOG("Setting timer's callback");
     rv = gfm_setFPS(game.pCtx, fps);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Initialize the FPS counter (only visible in debug mode, though)
+    DESPAIR_LOG("Initializing FPS counter...");
     rv = gfm_initFPSCounter(game.pCtx, game.pSset8x8, 0/*firstTile*/);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Initialize the quadtree
+    DESPAIR_LOG("Initializing quadtree...");
     rv = gfmQuadtree_getNew(&(game.pQt));
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Play the song
+    DESPAIR_LOG("Playing song...");
     rv = gfm_playAudio(0, game.pCtx, game.song, 0.8);
+    DESPAIR_LOG(" rv=%i", rv);
     ASSERT(rv == GFMRV_OK, rv);
+    DESPAIR_LOG(" OK\n");
     
     // Loop...
     game.state = state_introstate;
     if (doSkip) {
         game.state = state_playstate;
     }
+#ifdef EMSCRIPT
+    DESPAIR_LOG("Setting main loop...");
+    emscripten_set_main_loop_arg((em_arg_callback_func)main_loop, &game, 0, 0);
+    DESPAIR_LOG(" OK\n");
+#else
     while (gfm_didGetQuitFlag(game.pCtx) == GFMRV_FALSE) {
         // Run the current state
         switch (game.state) {
@@ -302,9 +400,15 @@ int main(int argc, char *argv[]) {
         
         game.quitState = 0;
     }
+#endif
     
     rv = GFMRV_OK;
 __ret:
+#ifdef EMSCRIPT
+    // This avoids clearing resources before the game starts running
+    DESPAIR_LOG("Done with initialization!");
+    return rv;
+#else
     // Clean all resources
     gfmGroup_free(&(game.pRender));
     gfmGenArr_clean(game.pObjs, gfmObject_free);
@@ -312,5 +416,6 @@ __ret:
     gfm_free(&(game.pCtx));
     
     return rv;
+#endif
 }
 

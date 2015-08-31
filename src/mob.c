@@ -523,14 +523,14 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
             vx = -pMob->dashHorSpeed;
             // Set dash timer
             if (!(pMob->lastMove & MOVE_DASH_LEFT)) {
-                pMob->curDashTimer =+ pMob->dashTime;
+                pMob->curDashTimer += pMob->dashTime;
             }
         }
         else if (move & MOVE_DASH_RIGHT) {
             vx = pMob->dashHorSpeed;
             // Set dash timer
             if (!(pMob->lastMove & MOVE_DASH_RIGHT)) {
-                pMob->curDashTimer =+ pMob->dashTime;
+                pMob->curDashTimer += pMob->dashTime;
             }
         }
         else if (move & MOVE_LEFT) {
@@ -547,14 +547,14 @@ gfmRV mob_update(mob *pMob, gameCtx *pGame) {
             vy = -pMob->dashVerSpeed;
             // Set dash timer
             if (!(pMob->lastMove & MOVE_DASH_UP)) {
-                pMob->curDashTimer =+ pMob->dashTime;
+                pMob->curDashTimer += pMob->dashTime;
             }
         }
         else if (move & MOVE_DASH_DOWN) {
             vy = pMob->dashVerSpeed;
             // Set dash timer
             if (!(pMob->lastMove & MOVE_DASH_DOWN)) {
-                pMob->curDashTimer =+ pMob->dashTime;
+                pMob->curDashTimer += pMob->dashTime;
             }
         }
         else if (move & MOVE_UP) {
