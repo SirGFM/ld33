@@ -155,19 +155,27 @@ emscript_pkg:
 		-O2 $(BINDIR)/$(TARGET).bc                        \
 		--preload-file assets/map.gfm@/map.gfm                    \
 		--preload-file assets/atlas.bmp@/atlas.bmp                \
+		--preload-file assets/expl.wav@/expl.wav                  \
+		--preload-file assets/player_death.wav@/player_death.wav  \
+		--preload-file assets/player_hit.wav@/player_hit.wav      \
+		--preload-file assets/slime_death.wav@/slime_death.wav    \
+		--preload-file assets/slime_hit.wav@/slime_hit.wav        \
+		--preload-file assets/wall_hit.wav@/wall_hit.wav          \
 		-o $(BINDIR)/pkg/$(TARGET).html
 #==============================================================================
 
 #$(CC) --emrun -m32 -s TOTAL_STACK=5242880 -s TOTAL_MEMORY=33554432 -s USE_SDL=2 \
+#		-O2 $(BINDIR)/$(TARGET).bc                        \
+#		--preload-file assets/map.gfm@/map.gfm                    \
+#		--preload-file assets/atlas.bmp@/atlas.bmp                \
 #		--preload-file assets/expl.wav@/expl.wav                  \
 #		--preload-file assets/mysong.wav@/mysong.wav              \
 #		--preload-file assets/player_death.wav@/player_death.wav  \
 #		--preload-file assets/player_hit.wav@/player_hit.wav      \
 #		--preload-file assets/slime_death.wav@/slime_death.wav    \
 #		--preload-file assets/slime_hit.wav@/slime_hit.wav        \
-#		--preload-file assets/song.wav@/song.wav                  \
 #		--preload-file assets/wall_hit.wav@/wall_hit.wav          \
-#
+#		-o $(BINDIR)/pkg/$(TARGET).html
 
 #==============================================================================
 # Define a rule to generated the icon

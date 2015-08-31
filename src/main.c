@@ -147,10 +147,13 @@ static gfmRV loadAssets(gameCtx *pGame) {
         texIndex, 256/*tileWidth*/, 128/*tileHeight*/);
     ASSERT(rv == GFMRV_OK, rv);
     
+#ifdef EMSCRIPT
+#else
     rv = gfm_loadAudio(&(pGame->song), pGame->pCtx, "mysong.wav", 10);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfm_setRepeat(pGame->pCtx, pGame->song, 6 * pGame->audioFreq );
     ASSERT(rv == GFMRV_OK, rv);
+#endif
     
     rv = gfm_loadAudio(&(pGame->expl), pGame->pCtx, "expl.wav", 8);
     ASSERT(rv == GFMRV_OK, rv);
@@ -259,10 +262,10 @@ int main(int argc, char *argv[]) {
     
     // TODO Remove this
 #ifdef EMSCRIPT
-    DESPAIR_LOG("Disabling audio...");
-    rv =  gfm_disableAudio(game.pCtx);
-    ASSERT(rv == GFMRV_OK, rv);
-    DESPAIR_LOG(" OK!\n");
+    //DESPAIR_LOG("Disabling audio...");
+    //rv =  gfm_disableAudio(game.pCtx);
+    //ASSERT(rv == GFMRV_OK, rv);
+    //DESPAIR_LOG(" OK!\n");
 #endif
     
     // Create the window
@@ -337,24 +340,15 @@ int main(int argc, char *argv[]) {
     DESPAIR_LOG(" OK\n");
     
     // Set FPS
-#ifdef EMSCRIPT
-    ups = 30;
-    dps = 30;
-#else
     ups = 60;
     dps = 60;
-#endif
     DESPAIR_LOG("Setting update and draw rate...");
     rv = gfm_setStateFrameRate(game.pCtx, ups, dps);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
     
     // Set the timer resolution, in frames per seconds
-#ifdef EMSCRIPT
-    fps = 30;
-#else
     fps = 60;
-#endif
     DESPAIR_LOG("Setting timer's callback");
     rv = gfm_setFPS(game.pCtx, fps);
     ASSERT(rv == GFMRV_OK, rv);
@@ -373,10 +367,13 @@ int main(int argc, char *argv[]) {
     DESPAIR_LOG(" OK\n");
     
     // Play the song
+#ifdef EMSCRIPT
+#else
     DESPAIR_LOG("Playing song...");
     rv = gfm_playAudio(0, game.pCtx, game.song, 0.8);
     ASSERT(rv == GFMRV_OK, rv);
     DESPAIR_LOG(" OK\n");
+#endif
     
     // Loop...
     game.state = state_introstate;
