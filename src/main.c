@@ -63,7 +63,7 @@ gfmRV main_cleanRenderGroup(gameCtx *pGame) {
         0/*offX*/, 0/*offY*/);
     rv = gfmGroup_setDeathOnLeave(pGame->pRender, 0/*dontDie*/);
     ASSERT(rv == GFMRV_OK, rv);
-    rv = gfmGroup_setDeathOnTime(pGame->pRender, 0/*ttl*/);
+    rv = gfmGroup_setDeathOnTime(pGame->pRender, -1/*ttl*/);
     ASSERT(rv == GFMRV_OK, rv);
     rv = gfmGroup_setDrawOrder(pGame->pRender, gfmDrawOrder_topFirst);
     ASSERT(rv == GFMRV_OK, rv);
